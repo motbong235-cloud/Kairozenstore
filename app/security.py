@@ -90,7 +90,7 @@ SECURITY_HEADERS = {
     "X-Frame-Options": "DENY",
     "Referrer-Policy": "strict-origin-when-cross-origin",
     "Permissions-Policy": "camera=(), microphone=(), geolocation=()",
-    "Cross-Origin-Opener-Policy": "same-origin",
+    "Cross-Origin-Opener-Policy": "same-origin-allow-popups",
 }
 
 
@@ -102,9 +102,10 @@ def apply_security_headers(response):
         "Content-Security-Policy",
         "default-src 'self'; "
         "img-src 'self' data: https: blob:; "
-        "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; "
+        "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://accounts.google.com/gsi/style; "
         "font-src 'self' https://fonts.gstatic.com data:; "
-        "script-src 'self' 'unsafe-inline'; "
+        "script-src 'self' 'unsafe-inline' https://accounts.google.com/gsi/client; "
+        "frame-src https://accounts.google.com/gsi/; "
         "connect-src 'self' https:; "
         "frame-ancestors 'none'; "
         "base-uri 'self'; "

@@ -1,6 +1,8 @@
 """Kairozen Store application factory."""
 from __future__ import annotations
 
+import os
+import secrets
 from pathlib import Path
 
 from flask import Flask
@@ -19,11 +21,28 @@ def create_app(config_class=Config) -> Flask:
     )
     app.config.from_object(config_class)
 
-    from app.routes import admin, api, web
+    from app.routes import admin, api, auth, web
 
     app.register_blueprint(web.bp)
     app.register_blueprint(api.bp)
+    app.register_blueprint(auth.bp)
     app.register_blueprint(admin.bp)
+
+    # Keep the session secret stable across restarts/deploys, otherwise every
+    # deploy logs out all customers + admin. Env wins; else it is stored in the DB.
+    if not os.environ.get("SECRET_KEY"):
+        try:
+            from app import database as db
+
+            with app.app_context():
+                d = db.read()
+                st = d.setdefault("settings", {})
+                if not st.get("_SECRET_KEY"):
+                    st["_SECRET_KEY"] = secrets.token_hex(32)
+                    db.write(d)
+                app.secret_key = st["_SECRET_KEY"]
+        except Exception:
+            pass
 
     @app.after_request
     def _sec_headers(resp):
@@ -44,10 +63,7 @@ def create_app(config_class=Config) -> Flask:
 
     @app.errorhandler(500)
     def err_500(e):
-        return (
-            f"<h1>Server Error</h1><pre>{getattr(e, 'original_exception', e)}</pre>"
-            f"<p><a href='/health'>/health</a></p>",
-            500,
-        )
+        app.logger.exception("Server error")
+        return "<h1>Server Error</h1><p><a href='/'>Back to store</a></p>", 500
 
     return app

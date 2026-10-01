@@ -1,10 +1,13 @@
 """Public JSON API."""
 from __future__ import annotations
 
+import os
+
 from flask import Blueprint, jsonify, request
 
 from app import database as db
 from app import security
+from app.routes.auth import current_user
 from app.services import order_service
 
 bp = Blueprint("api", __name__, url_prefix="/api")
@@ -22,6 +25,9 @@ def catalog():
             "SITE_TAGLINE": settings.get("SITE_TAGLINE", ""),
             "TELEGRAM": settings.get("TELEGRAM", ""),
             "CURRENCY": settings.get("CURRENCY", "USD"),
+            "LOGO_VERSION": settings.get("LOGO_VERSION", 0),
+            "GOOGLE_CLIENT_ID": (settings.get("GOOGLE_CLIENT_ID") or os.environ.get("GOOGLE_CLIENT_ID") or "").strip(),
+            "REQUIRE_LOGIN": bool(settings.get("REQUIRE_LOGIN")),
         },
         "categories": data.get("categories") or [],
         "products": products,
@@ -39,7 +45,10 @@ def create_order():
         return jsonify({"ok": False, "error": "product_id invalid"}), 400
     contact = body.get("telegram") or body.get("contact") or ""
     note = body.get("note") or ""
-    result = order_service.create_order(pid, contact=contact, note=note)
+    user = current_user()
+    if not user and (db.read().get("settings") or {}).get("REQUIRE_LOGIN"):
+        return jsonify({"ok": False, "error": "សូមចូលគណនី Google ជាមុនសិន", "login_required": True}), 401
+    result = order_service.create_order(pid, contact=contact[:120], note=note[:300], user=user)
     status = result.pop("status", 200)
     return jsonify(result), status
 
@@ -66,6 +75,8 @@ def confirm_paid():
 
 @bp.get("/order/<oid>")
 def get_order(oid: str):
+    if not security.rate_limit("order_get", limit=30, window_sec=60):
+        return jsonify({"ok": False, "error": "Too many requests"}), 429
     data = db.read()
     order = next(
         (o for o in data.get("orders", []) if o.get("id") == oid.upper() or o.get("id") == oid),

@@ -5,7 +5,7 @@ import os
 import secrets
 from functools import wraps
 
-from flask import Blueprint, jsonify, request, session
+from flask import Blueprint, Response, jsonify, request, session
 from werkzeug.utils import secure_filename
 
 from app import database as db
@@ -84,7 +84,16 @@ def data():
         order_service.sync_stock(d, p["id"])
     return jsonify({
         "ok": True,
-        "settings": d.get("settings") or {},
+        "settings": {k: v for k, v in (d.get("settings") or {}).items() if not k.startswith("_") and k != "ADMIN_PASSWORD"},
+        "storage": db.storage_info(),
+        "users": sorted(
+            [
+                {k: u.get(k) for k in ("id", "name", "email", "picture", "created_at", "last_login")}
+                for u in (d.get("users") or {}).values()
+            ],
+            key=lambda x: x.get("last_login") or "",
+            reverse=True,
+        )[:200],
         "categories": d.get("categories") or [],
         "products": d.get("products") or [],
         "orders": (d.get("orders") or [])[:100],
@@ -94,6 +103,7 @@ def data():
         },
         "stats": {
             "products": len(d.get("products") or []),
+            "users": len(d.get("users") or {}),
             "orders": len(d.get("orders") or []),
             "paid": sum(1 for o in d.get("orders") or [] if o.get("status") == "paid"),
             "pending": sum(
@@ -218,6 +228,7 @@ def settings():
         "SITE_NAME", "SITE_TAGLINE", "ADMIN_PASSWORD", "SHOP_NAME", "TELEGRAM",
         "CURRENCY", "PAYMENT_NOTE", "PAYMENT_QR", "BAKONG_ID",
         "KHMER_SECRET_KEY", "KHMER_PROFILE_KEY", "KHMER_MACHINE_ID", "KHMER_MERCHANT_NAME",
+        "SITE_DESCRIPTION", "GOOGLE_CLIENT_ID", "REQUIRE_LOGIN",
     ]
     for k in keys:
         if k in body:
@@ -228,21 +239,110 @@ def settings():
                     return jsonify({"ok": False, "error": "Password min 6 chars"}), 400
                 s[k] = security.hash_password(str(body[k]))
                 continue
-            s[k] = body[k]
+            if k == "REQUIRE_LOGIN":
+                s[k] = bool(body[k])
+            elif k == "GOOGLE_CLIENT_ID":
+                s[k] = str(body[k]).strip()
+            else:
+                s[k] = body[k]
     if s.get("KHMER_PROFILE_KEY") and not s.get("KHMER_SECRET_KEY"):
         s["KHMER_SECRET_KEY"] = s["KHMER_PROFILE_KEY"]
     db.write(d)
-    return jsonify({"ok": True, "settings": s})
+    safe = {k: v for k, v in s.items() if not k.startswith("_") and k != "ADMIN_PASSWORD"}
+    return jsonify({"ok": True, "settings": safe})
+
+
+# ───────────── uploads (stored in DB/disk backend, survive deploys) ─────────────
+MAX_IMG = 1_500_000  # 1.5 MB
+
+
+def _sniff_image(blob: bytes) -> tuple[str, str] | None:
+    """Return (mime, ext) from magic bytes. SVG is rejected on purpose (script risk)."""
+    if blob[:8] == b"\x89PNG\r\n\x1a\n":
+        return "image/png", "png"
+    if blob[:3] == b"\xff\xd8\xff":
+        return "image/jpeg", "jpg"
+    if blob[:4] == b"RIFF" and blob[8:12] == b"WEBP":
+        return "image/webp", "webp"
+    if blob[:6] in (b"GIF87a", b"GIF89a"):
+        return "image/gif", "gif"
+    if blob[:4] == b"\x00\x00\x01\x00":
+        return "image/x-icon", "ico"
+    return None
+
+
+def _store_upload(prefix: str):
+    f = request.files.get("file")
+    if not f:
+        return None, (jsonify({"ok": False, "error": "No file"}), 400)
+    blob = f.read(MAX_IMG + 1)
+    if len(blob) > MAX_IMG:
+        return None, (jsonify({"ok": False, "error": "Image too large (max 1.5 MB)"}), 400)
+    kind = _sniff_image(blob)
+    if not kind:
+        return None, (jsonify({"ok": False, "error": "Use PNG, JPG, WEBP or GIF"}), 400)
+    mime, ext = kind
+    name = f"{prefix}_{secrets.token_hex(6)}.{ext}"
+    db.media_put(name, mime, blob)
+    return name, None
 
 
 @bp.post("/upload-image")
 @admin_required
 def upload_image():
-    f = request.files.get("file")
-    if not f:
-        return jsonify({"ok": False, "error": "No file"}), 400
-    name = secure_filename(f.filename or "img.jpg")
-    unique = secrets.token_hex(6) + "_" + name
-    dest = db.upload_dir() / unique
-    f.save(str(dest))
-    return jsonify({"ok": True, "url": f"/api/media/{unique}"})
+    name, err = _store_upload("img")
+    if err:
+        return err
+    return jsonify({"ok": True, "url": f"/api/media/{name}"})
+
+
+@bp.post("/logo")
+@admin_required
+def upload_logo():
+    name, err = _store_upload("logo")
+    if err:
+        return err
+    d = db.read()
+    s = d.setdefault("settings", {})
+    s["SITE_LOGO"] = name
+    s["LOGO_VERSION"] = int(s.get("LOGO_VERSION") or 0) + 1
+    db.write(d)
+    return jsonify({"ok": True, "version": s["LOGO_VERSION"]})
+
+
+@bp.delete("/logo")
+@admin_required
+def reset_logo():
+    d = db.read()
+    s = d.setdefault("settings", {})
+    s["SITE_LOGO"] = ""
+    s["LOGO_VERSION"] = int(s.get("LOGO_VERSION") or 0) + 1
+    db.write(d)
+    return jsonify({"ok": True, "version": s["LOGO_VERSION"]})
+
+
+# ───────────── backup / restore ─────────────
+@bp.get("/backup")
+@admin_required
+def backup():
+    import json
+    from datetime import datetime, timezone
+
+    payload = json.dumps(db.export_all(), ensure_ascii=False, indent=2)
+    stamp = datetime.now(timezone.utc).strftime("%Y%m%d-%H%M")
+    return Response(
+        payload,
+        mimetype="application/json",
+        headers={"Content-Disposition": f"attachment; filename=kairozen-backup-{stamp}.json"},
+    )
+
+
+@bp.post("/restore")
+@admin_required
+def restore():
+    body = request.get_json(force=True, silent=True)
+    try:
+        db.import_all(body)
+    except Exception as e:
+        return jsonify({"ok": False, "error": str(e)}), 400
+    return jsonify({"ok": True})

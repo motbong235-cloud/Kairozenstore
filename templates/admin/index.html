@@ -3,8 +3,9 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Kairozen Store · Admin</title>
-<link rel="icon" type="image/jpeg" href="/static/logo.svg">
+<title>{{ site.name }} · Admin</title>
+<meta name="robots" content="noindex,nofollow">
+<link rel="icon" href="{{ site.logo }}">
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@600&display=swap" rel="stylesheet">
 <style>
 
@@ -56,12 +57,19 @@ th{color:var(--muted);font-size:10px;text-transform:uppercase}
 .toast{position:fixed;top:14px;left:50%;transform:translateX(-50%);z-index:50;background:#052e16;color:#bbf7d0;padding:10px 16px;border-radius:12px;font-weight:700}
 .toast.err{background:#450a0a;color:#fecaca}
 
+.warn{background:#fef3c7;border:1px solid #fcd34d;color:#92400e;border-radius:12px;padding:12px 14px;margin-bottom:14px;font-size:12px;line-height:1.5}
+.okb{background:#dcfce7;border:1px solid #bbf7d0;color:#166534;border-radius:12px;padding:10px 14px;margin-bottom:14px;font-size:12px}
+.logo-row{display:flex;gap:16px;align-items:center;flex-wrap:wrap}
+.logo-prev{width:96px;height:96px;border-radius:22px;border:1px solid var(--line);object-fit:cover;background:#f1f5f9}
+.help{font-size:11px;color:var(--muted);line-height:1.5;margin-top:4px}
+.sw{display:flex;align-items:center;gap:8px}.sw input{width:auto}
+.ava{width:28px;height:28px;border-radius:50%;vertical-align:middle;margin-right:8px}
 </style>
 </head>
 <body>
 <div class="gate" id="gate">
   <div class="gate-box">
-    <img src="/static/logo.svg" alt="" onerror="this.style.display='none'">
+    <img src="{{ site.logo }}" alt="" onerror="this.style.display='none'">
     <h2>Kairozen Admin</h2>
     <p>Orders · Products · Stock · Payment</p>
     <div class="field" style="text-align:left"><label>Password</label><input id="admPass" type="password"></div>
@@ -72,17 +80,19 @@ th{color:var(--muted);font-size:10px;text-transform:uppercase}
 
 <div class="wrap hidden" id="app">
   <div class="top">
-    <img src="/static/logo.svg" alt="" onerror="this.style.opacity=0">
+    <img id="topLogo" src="{{ site.logo }}" alt="" onerror="this.style.opacity=0">
     <h1>Kairozen Admin</h1>
     <div class="sp"></div>
     <a class="btn btn-ghost" href="/" target="_blank">Store</a>
     <button class="btn btn-ghost" type="button" onclick="doLogout()">Logout</button>
   </div>
+  <div id="storageBanner"></div>
   <div class="stats" id="stats"></div>
   <div class="tabs">
     <button class="tab on" data-t="orders" onclick="tab('orders')">Orders</button>
     <button class="tab" data-t="products" onclick="tab('products')">Products</button>
     <button class="tab" data-t="stock" onclick="tab('stock')">Stock</button>
+    <button class="tab" data-t="users" onclick="tab('users')">Users</button>
     <button class="tab" data-t="settings" onclick="tab('settings')">Settings</button>
   </div>
 
@@ -111,7 +121,7 @@ th{color:var(--muted);font-size:10px;text-transform:uppercase}
       </div>
       <div class="row2">
         <div class="field"><label>Badge</label><input id="pBadge" placeholder="HOT / VIP"></div>
-        <div class="field"><label>Image URL</label><input id="pImg" placeholder="/api/media/..."></div>
+        <div class="field"><label>Image (URL or upload)</label><input id="pImg" placeholder="/api/media/..."><input type="file" id="pImgFile" accept="image/*" style="margin-top:6px" onchange="uploadProdImg()"></div>
       </div>
       <button class="btn btn-v" type="button" onclick="saveProduct()">Save product</button>
       <button class="btn btn-ghost" type="button" onclick="$('#prodForm').classList.add('hidden')">Cancel</button>
@@ -132,8 +142,38 @@ th{color:var(--muted);font-size:10px;text-transform:uppercase}
     <div id="stockList" style="font-size:12px;color:var(--muted)"></div>
   </div>
 
+  <div id="t-users" class="card hidden">
+    <h3>Google users</h3>
+    <div style="overflow-x:auto"><table>
+      <thead><tr><th>User</th><th>Email</th><th>Joined</th><th>Last login</th></tr></thead>
+      <tbody id="userRows"></tbody>
+    </table></div>
+  </div>
+
   <div id="t-settings" class="card hidden">
     <h3>Settings</h3>
+    <div class="ks" style="background:#f8fafc;border-color:var(--line)">
+      <h4 style="color:var(--text)">Website Logo (favicon · Google search · share)</h4>
+      <div class="logo-row">
+        <img id="logoPrev" class="logo-prev" src="{{ site.logo }}" alt="logo">
+        <div style="flex:1;min-width:200px">
+          <input type="file" id="logoFile" accept="image/png,image/jpeg,image/webp">
+          <div style="display:flex;gap:8px;margin-top:8px;flex-wrap:wrap">
+            <button class="btn btn-v" type="button" onclick="uploadLogo()">Upload logo</button>
+            <button class="btn btn-ghost" type="button" onclick="resetLogo()">Reset default</button>
+          </div>
+          <div class="help">PNG / JPG ការ៉េ (square) យ៉ាងតិច 512×512px · ≤ 1.5 MB។ Google ត្រូវការ ១-២ សប្ដាហ៍ដើម្បីបង្ហាញ logo ថ្មីក្នុងលទ្ធផលស្វែងរក។</div>
+        </div>
+      </div>
+    </div>
+    <div class="field"><label>Site Name</label><input id="s_SITE_NAME"></div>
+    <div class="field"><label>Site Description (SEO — បង្ហាញក្នុង Google)</label><textarea id="s_SITE_DESCRIPTION" style="min-height:70px;font-family:var(--font)"></textarea></div>
+    <div class="ks">
+      <h4>Login with Google</h4>
+      <div class="field"><label>Google Client ID</label><input id="s_GOOGLE_CLIENT_ID" placeholder="1234567890-abc.apps.googleusercontent.com"></div>
+      <div class="sw"><input type="checkbox" id="s_REQUIRE_LOGIN"><label for="s_REQUIRE_LOGIN" style="margin:0;font-size:12px">ត្រូវ login Google ទើបទិញបាន (បើមិនធីក = guest ទិញបាន)</label></div>
+      <div class="help">1) console.cloud.google.com → APIs &amp; Services → Credentials → Create OAuth client ID (Web)<br>2) Authorized JavaScript origins = <b id="origin"></b><br>3) Copy Client ID មកដាក់ទីនេះ</div>
+    </div>
     <div class="ks">
       <h4>Khmer System (Auto Pay)</h4>
       <div class="field"><label>Profile Key / Secret Key *</label><input id="s_KHMER_PROFILE_KEY" placeholder="sk_live_..."></div>
@@ -148,6 +188,15 @@ th{color:var(--muted);font-size:10px;text-transform:uppercase}
     <div class="field"><label>Static QR URL (fallback)</label><input id="s_PAYMENT_QR"></div>
     <div class="field"><label>Admin Password</label><input id="s_ADMIN_PASSWORD" type="password" placeholder="leave blank = no change"></div>
     <button class="btn btn-v" type="button" onclick="saveSettings()">Save settings</button>
+    <div class="ks" style="margin-top:18px;background:#f8fafc;border-color:var(--line)">
+      <h4 style="color:var(--text)">Backup / Restore (ទិន្នន័យទាំងអស់)</h4>
+      <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">
+        <a class="btn btn-g" href="/api/admin/backup">⬇ Download backup</a>
+        <input type="file" id="restoreFile" accept="application/json" style="max-width:240px">
+        <button class="btn btn-r" type="button" onclick="restoreBackup()">Restore</button>
+      </div>
+      <div class="help">ណែនាំ៖ Download backup មុន deploy ធំៗ។ Restore នឹងជំនួសទិន្នន័យបច្ចុប្បន្នទាំងអស់។</div>
+    </div>
   </div>
 </div>
 <div class="toast hidden" id="toast"></div>
@@ -168,7 +217,7 @@ async function doLogin(){
 async function doLogout(){await api('admin/logout',{method:'POST'});location.reload()}
 function tab(n){
   document.querySelectorAll('.tab').forEach(t=>t.classList.toggle('on',t.dataset.t===n));
-  ['orders','products','stock','settings'].forEach(x=>$('#t-'+x)?.classList.toggle('hidden',x!==n));
+  ['orders','products','stock','users','settings'].forEach(x=>$('#t-'+x)?.classList.toggle('hidden',x!==n));
 }
 
 let DATA={};
@@ -212,8 +261,15 @@ async function load(){
       </td>
     </tr>`).join('');
 
+  const sb=$('#storageBanner'), stg=r.storage||{};
+  sb.innerHTML = stg.persistent
+    ? `<div class="okb">✓ Data រក្សាទុកអចិន្ត្រៃយ៍ (${esc(stg.mode)}) — update website មិនបាត់ data ទេ</div>`
+    : `<div class="warn"><b>⚠ Data អាចបាត់ពេល deploy!</b> Server នេះប្រើ disk បណ្តោះអាសន្ន។ សូមដាក់ <code>DATABASE_URL</code> (Postgres) ឬ Persistent Disk + <code>DATA_DIR</code> ក្នុង Render។ ឥឡូវនេះសូម Download backup ជាប្រចាំ។</div>`;
+  $('#userRows').innerHTML=(r.users||[]).map(u=>`<tr><td>${u.picture?`<img class="ava" src="${esc(u.picture)}" referrerpolicy="no-referrer" alt="">`:''}${esc(u.name||'')}</td><td>${esc(u.email||'')}</td><td class="mono" style="font-size:10px">${esc((u.created_at||'').slice(0,10))}</td><td class="mono" style="font-size:10px">${esc((u.last_login||'').slice(0,16).replace('T',' '))}</td></tr>`).join('')||'<tr><td colspan="4" style="color:var(--muted)">No users yet</td></tr>';
   const set=r.settings||{};
-  ['KHMER_PROFILE_KEY','KHMER_SECRET_KEY','KHMER_MACHINE_ID','KHMER_MERCHANT_NAME','BAKONG_ID','SHOP_NAME','SITE_TAGLINE','TELEGRAM','PAYMENT_QR'].forEach(k=>{
+  $('#s_REQUIRE_LOGIN').checked=!!set.REQUIRE_LOGIN;
+  $('#origin').textContent=location.origin;
+  ['SITE_NAME','SITE_DESCRIPTION','GOOGLE_CLIENT_ID','KHMER_PROFILE_KEY','KHMER_SECRET_KEY','KHMER_MACHINE_ID','KHMER_MERCHANT_NAME','BAKONG_ID','SHOP_NAME','SITE_TAGLINE','TELEGRAM','PAYMENT_QR'].forEach(k=>{
     const el=$('#s_'+k); if(el) el.value=set[k]??'';
   });
   $('#s_ADMIN_PASSWORD').value='';
@@ -243,6 +299,12 @@ async function saveProduct(){
   toast(r.ok?'Saved':(r.error||'Fail'),!r.ok);
   $('#prodForm').classList.add('hidden'); load();
 }
+async function uploadProdImg(){
+  const f=$('#pImgFile').files[0]; if(!f)return;
+  const fd=new FormData(); fd.append('file',f);
+  const r=await fetch('/api/admin/upload-image',{method:'POST',body:fd,credentials:'same-origin'}).then(x=>x.json()).catch(()=>({ok:false}));
+  if(r.ok){$('#pImg').value=r.url;toast('Image uploaded ✓')}else toast(r.error||'Fail',true);
+}
 async function delProd(id){
   if(!confirm('Delete product '+id+'?'))return;
   await api('admin/product',{method:'DELETE',body:JSON.stringify({id})}); load();
@@ -264,12 +326,37 @@ async function loadStock(){
 }
 async function saveSettings(){
   const body={};
-  ['KHMER_PROFILE_KEY','KHMER_SECRET_KEY','KHMER_MACHINE_ID','KHMER_MERCHANT_NAME','BAKONG_ID','SHOP_NAME','SITE_TAGLINE','TELEGRAM','PAYMENT_QR','ADMIN_PASSWORD'].forEach(k=>{
+  ['SITE_NAME','SITE_DESCRIPTION','GOOGLE_CLIENT_ID','KHMER_PROFILE_KEY','KHMER_SECRET_KEY','KHMER_MACHINE_ID','KHMER_MERCHANT_NAME','BAKONG_ID','SHOP_NAME','SITE_TAGLINE','TELEGRAM','PAYMENT_QR','ADMIN_PASSWORD'].forEach(k=>{
     const el=$('#s_'+k); if(!el)return; if(k==='ADMIN_PASSWORD'&&!el.value)return; body[k]=el.value;
   });
+  body.REQUIRE_LOGIN=$('#s_REQUIRE_LOGIN').checked;
   if(body.KHMER_PROFILE_KEY&&!body.KHMER_SECRET_KEY) body.KHMER_SECRET_KEY=body.KHMER_PROFILE_KEY;
   const r=await api('admin/settings',{method:'PUT',body:JSON.stringify(body)});
   toast(r.ok?'Saved':(r.error||'Fail'),!r.ok); load();
+}
+function refreshLogo(v){
+  const u='/site-logo?v='+v;
+  $('#logoPrev').src=u; const t=$('#topLogo'); if(t) t.src=u;
+  document.querySelectorAll('link[rel~=icon]').forEach(l=>l.href=u);
+}
+async function uploadLogo(){
+  const f=$('#logoFile').files[0]; if(!f){toast('ជ្រើសរើសរូបភាពសិន',true);return}
+  const fd=new FormData(); fd.append('file',f);
+  const r=await fetch('/api/admin/logo',{method:'POST',body:fd,credentials:'same-origin'}).then(x=>x.json()).catch(()=>({ok:false}));
+  toast(r.ok?'Logo updated ✓':(r.error||'Fail'),!r.ok);
+  if(r.ok){refreshLogo(r.version);$('#logoFile').value=''}
+}
+async function resetLogo(){
+  if(!confirm('Reset logo to default?'))return;
+  const r=await fetch('/api/admin/logo',{method:'DELETE',credentials:'same-origin'}).then(x=>x.json()).catch(()=>({ok:false}));
+  toast(r.ok?'Reset ✓':'Fail',!r.ok); if(r.ok) refreshLogo(r.version);
+}
+async function restoreBackup(){
+  const f=$('#restoreFile').files[0]; if(!f){toast('ជ្រើសរើសឯកសារ backup សិន',true);return}
+  if(!confirm('Restore នឹងជំនួសទិន្នន័យបច្ចុប្បន្នទាំងអស់។ បន្តដែរទេ?'))return;
+  let body; try{body=JSON.parse(await f.text())}catch(e){toast('Invalid JSON',true);return}
+  const r=await api('admin/restore',{method:'POST',body:JSON.stringify(body)});
+  toast(r.ok?'Restored ✓':(r.error||'Fail'),!r.ok); load();
 }
 $('#admPass')?.addEventListener('keydown',e=>{if(e.key==='Enter')doLogin()});
 api('admin/me').then(r=>{

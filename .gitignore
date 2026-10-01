@@ -1,0 +1,7 @@
+__pycache__/
+*.pyc
+data/db.json
+data/db.json.bak
+data/uploads/
+static/uploads/
+.env

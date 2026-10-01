@@ -2,13 +2,21 @@ services:
   - type: web
     name: kairozen-store
     runtime: python
-    plan: starter
+    plan: starter            # Persistent Disk requires a paid plan (free plan has no disk)
     buildCommand: pip install -r requirements.txt
     startCommand: gunicorn server:app --bind 0.0.0.0:$PORT --workers 1 --threads 2 --timeout 120
+    disk:
+      name: kairozen-data
+      mountPath: /var/data   # db.json + uploads + logo live here, survive every deploy
+      sizeGB: 1
     envVars:
+      - key: DATA_DIR
+        value: /var/data
       - key: SECRET_KEY
         generateValue: true
       - key: ADMIN_PASSWORD
-        value: admin123
+        sync: false
       - key: ADMIN_PATH
         value: kz-panel-8391
+      - key: GOOGLE_CLIENT_ID
+        sync: false

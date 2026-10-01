@@ -88,3 +88,35 @@ Local HTTP testing:
 ```
 SESSION_COOKIE_SECURE=0 python server.py
 ```
+
+
+## v2 — Persistent data · Logo · Google login
+
+### 1. Data never lost on update
+Cause of data loss before: `data/db.json` lived inside the deployed code, so every deploy replaced it.
+Now:
+- `data/seed.json` = first-run starter data only (never overwrites live data)
+- Live data goes to **Postgres** (`DATABASE_URL`) or a **persistent disk** (`DATA_DIR`)
+- Logo + product images are stored in the same place (not on the temporary disk)
+- New settings are merged in on startup; existing values are never overwritten
+- Admin → Settings → **Backup / Restore**, and a banner warns if storage is temporary
+- `/health` shows the active storage mode
+
+### 2. Website logo
+Admin → Settings → **Website Logo**. Used for favicon, `/favicon.ico`, Open Graph, schema.org
+`Organization.logo` (what Google reads for search results), and the store header.
+Use a square PNG ≥ 512px (Google needs ≥ 48px, multiple of 48 is ideal).
+
+### 3. Login with Google
+1. Google Cloud Console → APIs & Services → Credentials → **OAuth client ID (Web)**
+2. Authorized JavaScript origins: `https://your-site.onrender.com`
+3. Paste the Client ID in Admin → Settings → Login with Google (or env `GOOGLE_CLIENT_ID`)
+4. Optional: tick "require login" to force Google login before buying
+Customers can see "My orders" and their delivered accounts after login. Admin → Users lists them.
+
+
+### Persistent disk (/var/data) on Render
+1. Service → **Disks** → Add Disk → Mount Path `/var/data` (needs a paid plan)
+2. Environment → `DATA_DIR` = `/var/data`
+3. Redeploy. `/health` must show `"mode": "disk", "persistent": true, "path": "/var/data"`
+Even if `DATA_DIR` is forgotten, the app auto-uses `/var/data` when the disk is mounted.

@@ -43,7 +43,7 @@ def fulfill(data: dict, order: dict) -> dict:
     return order
 
 
-def create_order(product_id: int, contact: str = "", note: str = "") -> dict[str, Any]:
+def create_order(product_id: int, contact: str = "", note: str = "", user: dict | None = None) -> dict[str, Any]:
     data = db.read()
     product = next(
         (p for p in data.get("products", []) if p.get("id") == product_id and p.get("active", True)),
@@ -54,9 +54,10 @@ def create_order(product_id: int, contact: str = "", note: str = "") -> dict[str
     if int(product.get("stock") or 0) <= 0:
         return {"ok": False, "error": "Out of stock", "status": 400}
 
-    contact = (contact or "").strip() or ("guest_" + secrets.token_hex(3))
+    contact = (contact or "").strip() or (user or {}).get("email") or ("guest_" + secrets.token_hex(3))
     n = int(data.get("next_order") or 1001)
-    oid = f"KZ{n}"
+    # random suffix → order IDs can't be guessed (they unlock the delivered account)
+    oid = f"KZ{n}-{secrets.token_hex(2).upper()}"
     data["next_order"] = n + 1
     price = float(product.get("price") or 0)
 
@@ -66,6 +67,8 @@ def create_order(product_id: int, contact: str = "", note: str = "") -> dict[str
         "product_name": product.get("name"),
         "price": price,
         "contact": contact,
+        "user_id": (user or {}).get("id"),
+        "user_email": (user or {}).get("email"),
         "note": (note or "").strip(),
         "status": "pending_payment",
         "delivery": None,
@@ -187,3 +190,21 @@ def mark_waiting_or_fulfill(order_id: str) -> dict[str, Any]:
         order["status"] = "waiting_confirm"
         db.write(data)
     return {"ok": True, "order": order, "message": "Waiting admin confirm"}
+
+
+def orders_for_user(user_id: str, limit: int = 50) -> list[dict[str, Any]]:
+    data = db.read()
+    out = []
+    for o in data.get("orders", []):
+        if o.get("user_id") == user_id:
+            out.append({
+                "id": o["id"],
+                "product_name": o.get("product_name"),
+                "price": o.get("price"),
+                "status": o.get("status"),
+                "created_at": o.get("created_at"),
+                "delivery": o.get("delivery") if o.get("status") == "paid" else None,
+            })
+        if len(out) >= limit:
+            break
+    return out

@@ -171,16 +171,34 @@ th{color:var(--muted);font-size:10px;text-transform:uppercase}
     <div class="ks">
       <h4>Login with Google</h4>
       <div class="field"><label>Google Client ID</label><input id="s_GOOGLE_CLIENT_ID" placeholder="1234567890-abc.apps.googleusercontent.com"></div>
-      <div class="sw"><input type="checkbox" id="s_REQUIRE_LOGIN"><label for="s_REQUIRE_LOGIN" style="margin:0;font-size:12px">ត្រូវ login Google ទើបទិញបាន (បើមិនធីក = guest ទិញបាន)</label></div>
+      <div class="sw"><input type="checkbox" id="s_REQUIRE_LOGIN"><label for="s_REQUIRE_LOGIN" style="margin:0;font-size:12px">ត្រូវ login Google ទើបទិញបាន (បើកជានិច្ច — guest ទិញមិនបាន)</label></div>
       <div class="help">1) console.cloud.google.com → APIs &amp; Services → Credentials → Create OAuth client ID (Web)<br>2) Authorized JavaScript origins = <b id="origin"></b><br>3) Copy Client ID មកដាក់ទីនេះ</div>
     </div>
-    <div class="ks">
-      <h4>Khmer System (Auto Pay)</h4>
-      <div class="field"><label>Profile Key / Secret Key *</label><input id="s_KHMER_PROFILE_KEY" placeholder="sk_live_..."></div>
-      <div class="field"><label>Secret Key (if different)</label><input id="s_KHMER_SECRET_KEY"></div>
-      <div class="field"><label>Machine ID</label><input id="s_KHMER_MACHINE_ID"></div>
-      <div class="field"><label>Merchant Name</label><input id="s_KHMER_MERCHANT_NAME" value="Kairozen Store"></div>
-      <div class="field"><label>Bakong ID (optional)</label><input id="s_BAKONG_ID"></div>
+    <div class="ks" style="background:#eff6ff;border-color:#bfdbfe">
+      <h4>KHPAY Auto Pay (khpay.site)</h4>
+      <div class="field"><label>API Key *</label><input id="s_KHPAY_API_KEY" placeholder="ak_live_..." autocomplete="off"></div>
+      <div class="field"><label>Merchant ID (optional mch_…)</label><input id="s_KHPAY_MERCHANT_ID" placeholder="mch_..." autocomplete="off"></div>
+      <div class="field"><label>Webhook Secret</label><input id="s_KHPAY_WEBHOOK_SECRET" placeholder="from Dashboard → Settings → Webhooks" autocomplete="off"></div>
+      <div class="field"><label>Site URL (for webhook)</label><input id="s_SITE_URL" placeholder="https://your-app.onrender.com"></div>
+      <div class="field"><label>Callback URL (optional override)</label><input id="s_KHPAY_CALLBACK_URL" placeholder="https://your-app.onrender.com/api/webhook/khpay"></div>
+      <div class="help">
+        1) ចុះឈ្មោះ <a href="https://khpay.site/register" target="_blank" rel="noopener">khpay.site</a><br>
+        2) Dashboard → Settings → API Keys → copy <b>ak_…</b><br>
+        3) បិទភ្ជាប់ ABA PayWay merchant link ក្នុង KHPAY dashboard<br>
+        4) Webhook URL = <code id="whHint">/api/webhook/khpay</code>
+      </div>
+    </div>
+    <div class="ks" style="background:#eff6ff;border-color:#bfdbfe">
+      <h4>Homepage Banner</h4>
+      <div class="field"><label>Banner Title</label><input id="s_BANNER_TITLE" placeholder="NEW CUSTOMERS!"></div>
+      <div class="field"><label>Banner Subtitle</label><input id="s_BANNER_SUBTITLE" placeholder="Premium accounts · Instant delivery"></div>
+      <div class="row2">
+        <div class="field"><label>OFF badge (e.g. 10%)</label><input id="s_BANNER_OFF" placeholder="10%"></div>
+        <div class="field"><label>Banner image URL</label><input id="s_BANNER_IMAGE" placeholder="/api/media/..."></div>
+      </div>
+      <div class="field"><label>Upload banner image</label><input type="file" id="bannerFile" accept="image/*" onchange="uploadBanner()"></div>
+      <div class="field"><label>Marquee text (top blue bar)</label><input id="s_MARQUEE_TEXT" placeholder="Flash Sale · CapCut · Netflix · Instant delivery"></div>
+      <div class="help">Banner បង្ហាញលើទំព័រហាង។ រូបណែនាំទទឹង ~1200px</div>
     </div>
     <div class="field"><label>Shop Name</label><input id="s_SHOP_NAME"></div>
     <div class="field"><label>Tagline</label><input id="s_SITE_TAGLINE"></div>
@@ -269,7 +287,7 @@ async function load(){
   const set=r.settings||{};
   $('#s_REQUIRE_LOGIN').checked=!!set.REQUIRE_LOGIN;
   $('#origin').textContent=location.origin;
-  ['SITE_NAME','SITE_DESCRIPTION','GOOGLE_CLIENT_ID','KHMER_PROFILE_KEY','KHMER_SECRET_KEY','KHMER_MACHINE_ID','KHMER_MERCHANT_NAME','BAKONG_ID','SHOP_NAME','SITE_TAGLINE','TELEGRAM','PAYMENT_QR'].forEach(k=>{
+  ['SITE_NAME','SITE_DESCRIPTION','GOOGLE_CLIENT_ID','KHPAY_API_KEY','KHPAY_MERCHANT_ID','KHPAY_WEBHOOK_SECRET','KHPAY_CALLBACK_URL','SITE_URL','BAKONG_ID','SHOP_NAME','SITE_TAGLINE','TELEGRAM','PAYMENT_QR','BANNER_TITLE','BANNER_SUBTITLE','BANNER_OFF','BANNER_IMAGE','MARQUEE_TEXT'].forEach(k=>{
     const el=$('#s_'+k); if(el) el.value=set[k]??'';
   });
   $('#s_ADMIN_PASSWORD').value='';
@@ -326,11 +344,10 @@ async function loadStock(){
 }
 async function saveSettings(){
   const body={};
-  ['SITE_NAME','SITE_DESCRIPTION','GOOGLE_CLIENT_ID','KHMER_PROFILE_KEY','KHMER_SECRET_KEY','KHMER_MACHINE_ID','KHMER_MERCHANT_NAME','BAKONG_ID','SHOP_NAME','SITE_TAGLINE','TELEGRAM','PAYMENT_QR','ADMIN_PASSWORD'].forEach(k=>{
+  ['SITE_NAME','SITE_DESCRIPTION','GOOGLE_CLIENT_ID','KHPAY_API_KEY','KHPAY_MERCHANT_ID','KHPAY_WEBHOOK_SECRET','KHPAY_CALLBACK_URL','SITE_URL','BAKONG_ID','SHOP_NAME','SITE_TAGLINE','TELEGRAM','PAYMENT_QR','ADMIN_PASSWORD','BANNER_TITLE','BANNER_SUBTITLE','BANNER_OFF','BANNER_IMAGE','MARQUEE_TEXT'].forEach(k=>{
     const el=$('#s_'+k); if(!el)return; if(k==='ADMIN_PASSWORD'&&!el.value)return; body[k]=el.value;
   });
   body.REQUIRE_LOGIN=$('#s_REQUIRE_LOGIN').checked;
-  if(body.KHMER_PROFILE_KEY&&!body.KHMER_SECRET_KEY) body.KHMER_SECRET_KEY=body.KHMER_PROFILE_KEY;
   const r=await api('admin/settings',{method:'PUT',body:JSON.stringify(body)});
   toast(r.ok?'Saved':(r.error||'Fail'),!r.ok); load();
 }

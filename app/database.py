@@ -101,14 +101,14 @@ def _default_settings() -> dict[str, Any]:
         "TELEGRAM": "https://t.me/",
         "CURRENCY": "USD",
         "PAYMENT_NOTE": "Scan KHQR · auto deliver",
-        "KHMER_SECRET_KEY": "",
-        "KHMER_PROFILE_KEY": "",
-        "KHMER_MACHINE_ID": "",
-        "KHMER_MERCHANT_NAME": "Kairozen Store",
+        "KHPAY_API_KEY": "",
+        "KHPAY_WEBHOOK_SECRET": "",
+        "KHPAY_CALLBACK_URL": "",
+        "SITE_URL": "",
         "BAKONG_ID": "",
         "PAYMENT_QR": "",
         "GOOGLE_CLIENT_ID": "",
-        "REQUIRE_LOGIN": False,
+        "REQUIRE_LOGIN": True,
     }
 
 

@@ -27,7 +27,13 @@ def catalog():
             "CURRENCY": settings.get("CURRENCY", "USD"),
             "LOGO_VERSION": settings.get("LOGO_VERSION", 0),
             "GOOGLE_CLIENT_ID": (settings.get("GOOGLE_CLIENT_ID") or os.environ.get("GOOGLE_CLIENT_ID") or "").strip(),
-            "REQUIRE_LOGIN": bool(settings.get("REQUIRE_LOGIN")),
+            "REQUIRE_LOGIN": True,  # always require Google login to buy
+            "BANNER_TITLE": settings.get("BANNER_TITLE") or "NEW CUSTOMERS!",
+            "BANNER_SUBTITLE": settings.get("BANNER_SUBTITLE") or "Premium accounts · Instant delivery · Trusted",
+            "BANNER_OFF": settings.get("BANNER_OFF") or "10%",
+            "BANNER_IMAGE": settings.get("BANNER_IMAGE") or "",
+            "MARQUEE_TEXT": settings.get("MARQUEE_TEXT") or "",
+
         },
         "categories": data.get("categories") or [],
         "products": products,
@@ -43,12 +49,19 @@ def create_order():
         pid = int(body.get("product_id"))
     except Exception:
         return jsonify({"ok": False, "error": "product_id invalid"}), 400
-    contact = body.get("telegram") or body.get("contact") or ""
     note = body.get("note") or ""
+    pay_with_balance = bool(body.get("pay_with_balance"))
     user = current_user()
-    if not user and (db.read().get("settings") or {}).get("REQUIRE_LOGIN"):
-        return jsonify({"ok": False, "error": "សូមចូលគណនី Google ជាមុនសិន", "login_required": True}), 401
-    result = order_service.create_order(pid, contact=contact[:120], note=note[:300], user=user)
+    # Always require Google login before purchase
+    if not user:
+        return jsonify({
+            "ok": False,
+            "error": "សូមចូលគណនី Google ជាមុនសិន ទើបទិញបាន",
+            "login_required": True,
+        }), 401
+    result = order_service.create_order(
+        pid, contact="", note=note[:300], user=user, pay_with_balance=pay_with_balance
+    )
     status = result.pop("status", 200)
     return jsonify(result), status
 
@@ -69,6 +82,23 @@ def confirm_paid():
     body = request.get_json(force=True, silent=True) or {}
     oid = (body.get("order_id") or "").strip()
     result = order_service.mark_waiting_or_fulfill(oid)
+    status = result.pop("status", 200)
+    return jsonify(result), status
+
+
+@bp.post("/wallet/topup")
+def wallet_topup():
+    if not security.rate_limit("wallet_topup", limit=10, window_sec=60):
+        return jsonify({"ok": False, "error": "Too many requests"}), 429
+    user = current_user()
+    if not user:
+        return jsonify({"ok": False, "error": "Login required", "login_required": True}), 401
+    body = request.get_json(force=True, silent=True) or {}
+    try:
+        amount = float(body.get("amount") or 0)
+    except Exception:
+        return jsonify({"ok": False, "error": "Invalid amount"}), 400
+    result = order_service.create_topup(amount, user)
     status = result.pop("status", 200)
     return jsonify(result), status
 
@@ -94,3 +124,48 @@ def get_order(oid: str):
     if order.get("status") == "paid":
         out["delivery"] = order.get("delivery")
     return jsonify({"ok": True, "order": out})
+
+
+@bp.post("/webhook/khpay")
+def webhook_khpay():
+    """KHPAY payment webhook — confirm order when paid."""
+    from flask import request
+    from app.services import khpay as khpay_svc
+    from app.services import order_service
+
+    raw = request.get_data() or b""
+    sig = request.headers.get("X-KHPAY-Signature") or request.headers.get("x-khpay-signature") or ""
+    settings = (db.read().get("settings") or {})
+    secret = (settings.get("KHPAY_WEBHOOK_SECRET") or "").strip()
+    if secret and not khpay_svc.verify_webhook_signature(raw, sig, secret):
+        return jsonify({"ok": False, "error": "Invalid signature"}), 401
+
+    body = request.get_json(force=True, silent=True) or {}
+    event = (body.get("event") or "").lower()
+    status = (body.get("status") or "").lower()
+    txn = body.get("transaction_id") or ""
+    meta = body.get("metadata") if isinstance(body.get("metadata"), dict) else {}
+    order_id = meta.get("order_id") or body.get("order_id") or ""
+
+    paid = event in ("payment.paid", "paid") or status in ("paid", "completed", "approved")
+    if not paid:
+        return jsonify({"ok": True, "ignored": True})
+
+    data = db.read()
+    order = None
+    if order_id:
+        order = next((o for o in data.get("orders", []) if o.get("id") == order_id), None)
+    if not order and txn:
+        order = next(
+            (o for o in data.get("orders", []) if o.get("khpay_transaction_id") == txn),
+            None,
+        )
+    if not order:
+        return jsonify({"ok": False, "error": "Order not found"}), 404
+    if order.get("status") == "paid":
+        return jsonify({"ok": True, "already": True})
+
+    order_service.fulfill(data, order)
+    db.write(data)
+    return jsonify({"ok": True, "order_id": order.get("id")})
+

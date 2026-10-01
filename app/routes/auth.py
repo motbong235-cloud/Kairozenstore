@@ -49,7 +49,13 @@ def verify_google_token(id_token: str, expected_aud: str) -> dict | None:
 def public_user(u: dict | None) -> dict | None:
     if not u:
         return None
-    return {"id": u["id"], "name": u.get("name"), "email": u.get("email"), "picture": u.get("picture")}
+    return {
+        "id": u["id"],
+        "name": u.get("name"),
+        "email": u.get("email"),
+        "picture": u.get("picture"),
+        "balance": round(float(u.get("balance") or 0), 2),
+    }
 
 
 def current_user() -> dict | None:
@@ -78,7 +84,9 @@ def google_login():
     users = data.setdefault("users", {})
     uid = "g_" + claims["sub"]
     now = order_service.utc_now()
-    u = users.get(uid) or {"id": uid, "created_at": now}
+    u = users.get(uid) or {"id": uid, "created_at": now, "balance": 0}
+    if "balance" not in u:
+        u["balance"] = 0
     u.update({
         "email": claims["email"],
         "name": claims.get("name") or claims["email"].split("@")[0],

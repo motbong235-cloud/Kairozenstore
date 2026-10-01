@@ -34,6 +34,11 @@ def home():
     return render_template("shop/index.html", site=_site())
 
 
+@bp.get("/profile")
+def profile():
+    return render_template("shop/profile.html", site=_site())
+
+
 @bp.get(f"/{ADMIN_PATH}")
 def admin_panel():
     """Hidden admin UI — not linked from the storefront."""

@@ -206,20 +206,16 @@ footer.foot{text-align:center;color:var(--faint);font-size:11px;padding:0 14px 9
 <div id="uMenuHost"></div>
 
 <div class="promo">
-  <div class="off">OFF<br><b id="promoOff">10%</b></div>
-  <div class="eyebrow">WELCOME TO {{ site.name|upper }}</div>
-  <h2>NEW CUSTOMERS!</h2>
-  <p>Premium accounts · Instant delivery · Trusted</p>
-  <div class="chips">
+  <div class="off" id="promoOffWrap">OFF<br><b id="promoOff">10%</b></div>
+  <div class="eyebrow" id="promoEye">WELCOME TO KAIROZEN</div>
+  <h2 id="promoTitle">NEW CUSTOMERS!</h2>
+  <p id="promoSub">Premium accounts · Instant delivery · Trusted</p>
+  <div class="chips" id="promoChips">
     <span class="chip">✓ Instant Delivery</span>
     <span class="chip">✓ Auto Pay KHQR</span>
     <span class="chip">✓ Support</span>
   </div>
-</div>
-
-<div class="searchbar">
-  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.3-4.3"/></svg>
-  <input id="q" type="search" placeholder="ស្វែងរកផលិតផល... (Netflix, CapCut)" autocomplete="off" aria-label="Search products">
+  <div id="promoImgWrap" class="hidden" style="margin-top:12px"><img id="promoImg" alt="" style="width:100%;border-radius:12px;max-height:160px;object-fit:cover"></div>
 </div>
 <div class="cats" id="cats"></div>
 
@@ -304,9 +300,19 @@ async function load(){
   if(!r.ok) return;
   CATALOG = r;
   if(r.settings?.TELEGRAM) $('#tg').href = r.settings.TELEGRAM;
-  if(r.settings?.SITE_TAGLINE){
+  const s = r.settings || {};
+  const mq = (s.MARQUEE_TEXT || s.SITE_TAGLINE || '').trim();
+  if(mq){
     const m = $('#marqueeText');
-    m.textContent = '🔥 '+r.settings.SITE_TAGLINE+' · Instant delivery · Trusted & Secure  ·  '+m.textContent;
+    if(m) m.textContent = '🔥 '+mq+'  ·  🔥 '+mq+'  ·  ';
+  }
+  if(s.BANNER_TITLE) { const el=$('#promoTitle'); if(el) el.textContent = s.BANNER_TITLE; }
+  if(s.BANNER_SUBTITLE) { const el=$('#promoSub'); if(el) el.textContent = s.BANNER_SUBTITLE; }
+  if(s.BANNER_OFF) { const el=$('#promoOff'); if(el) el.textContent = s.BANNER_OFF; }
+  if(s.SITE_NAME) { const el=$('#promoEye'); if(el) el.textContent = 'WELCOME TO '+(s.SITE_NAME||'').toUpperCase(); }
+  if(s.BANNER_IMAGE) {
+    const w=$('#promoImgWrap'), img=$('#promoImg');
+    if(w&&img){ img.src=s.BANNER_IMAGE; w.classList.remove('hidden'); }
   }
   renderCats();
   renderFlash();
@@ -384,7 +390,7 @@ function closeModal(){ if(POLL) clearInterval(POLL); document.querySelector('.ov
 function buy(id){
   const p = (CATALOG.products||[]).find(x=>x.id===id);
   if(!p||Number(p.stock||0)<=0){ toast('Sold out', true); return; }
-  if(CATALOG.settings?.REQUIRE_LOGIN && !USER){ openLogin('សូមចូលគណនី Google ដើម្បីបន្តទិញ'); return; }
+  if(!USER){ openLogin('សូមចូលគណនី Google ជាមុនសិន ទើបទិញបាន'); return; }
   const ov = document.createElement('div');
   ov.className = 'overlay';
   ov.onclick = e => { if(e.target===ov) closeModal(); };
@@ -392,21 +398,30 @@ function buy(id){
     <h3>${esc(p.name)}</h3>
     <div class="sub">${money(p.price)} · ${esc(p.duration||'')} · Stock ${p.stock}</div>
     ${USER?`<div class="userline"><img src="${esc(USER.picture||'')}" alt="" referrerpolicy="no-referrer" onerror="this.style.display='none'"><span>${esc(USER.email)}</span></div>`:''}
-    <div class="field"><label>Telegram / Contact (optional)</label><input id="buyContact" placeholder="@username"></div>
-    <div id="buyBody"></div>
-    <div class="actions">
-      <button class="btn btn-ghost" type="button" onclick="closeModal()">Close</button>
-      <button class="btn btn-primary" type="button" id="btnCreate" onclick="createOrder(${p.id})">Pay with KHQR</button>
-    </div>
+    <div id="buyBody"></div><div id="buyActions" class="actions" style="margin-top:12px"></div>
   </div>`;
   document.body.appendChild(ov);
+  const actions = document.getElementById('buyActions');
+  const bal = USER ? Number(USER.balance||0) : 0;
+  let btns = `<button class="btn btn-ghost" type="button" onclick="closeModal()">Close</button>`;
+  if(USER && bal >= Number(p.price)){
+    btns += `<button class="btn btn-primary" type="button" id="btnCreate" onclick="createOrder(${p.id},true)">Pay $${Number(p.price).toFixed(2)} (Balance $${bal.toFixed(2)})</button>`;
+  } else {
+    btns += `<button class="btn btn-primary" type="button" id="btnCreate" onclick="createOrder(${p.id},false)">Pay with KHQR</button>`;
+  }
+  actions.innerHTML = btns;
+  if(USER && bal < Number(p.price)){
+    const tip = document.createElement('p');
+    tip.style.cssText = 'font-size:11px;color:var(--muted);margin-top:8px;text-align:center';
+    tip.innerHTML = `Balance $${bal.toFixed(2)} · <a href="/profile">Top up</a>`;
+    actions.parentNode.appendChild(tip);
+  }
 }
 
-async function createOrder(id){
+async function createOrder(id, withBalance){
   const btn = $('#btnCreate');
-  if(btn){ btn.disabled = true; btn.textContent = 'Creating...'; }
-  const contact = ($('#buyContact')?.value||'').trim();
-  const r = await api('order',{method:'POST',body:JSON.stringify({product_id:id,telegram:contact,contact})});
+  if(btn){ btn.disabled = true; btn.textContent = 'Processing...'; }
+  const r = await api('order',{method:'POST',body:JSON.stringify({product_id:id,pay_with_balance:!!withBalance})});
   const box = $('#buyBody');
   if(!r.ok){
     if(r.login_required){ closeModal(); openLogin(r.error); return; }
@@ -414,11 +429,19 @@ async function createOrder(id){
     if(btn){ btn.disabled=false; btn.textContent='Pay with KHQR'; }
     return;
   }
+  if(r.paid_with==='balance'){
+    if(typeof r.balance==='number' && USER) USER.balance = r.balance;
+    if(btn) btn.style.display='none';
+    showDelivery(r.order);
+    load();
+    toast('Paid with balance ✓');
+    return;
+  }
   const o = r.order, pay = r.payment||{};
-  const qr = pay.PAYMENT_QR||'';
+  const qr = (pay && pay.PAYMENT_QR)||'';
   if(btn) btn.style.display='none';
   box.innerHTML = `<div class="pay-box">
-    <div style="font-size:12px;color:var(--muted)">${esc(pay.SHOP_NAME||'Kairozen Store')}${pay.KS_DYNAMIC?' · Khmer System':''}</div>
+    <div style="font-size:12px;color:var(--muted)">${esc(pay.SHOP_NAME||'Kairozen Store')}${pay.KS_DYNAMIC?' · KHPAY':''}</div>
     <div class="amt">${money(o.price)}</div>
     ${qr?`<img src="${esc(qr)}" alt="KHQR">`:`<div style="padding:16px;color:var(--red);font-size:13px">No QR<br><span style="color:var(--muted);font-size:12px">${esc(r.ks_error||'Payment not configured yet')}</span></div>`}
     <div style="font-size:11px;color:var(--faint);margin-top:6px">Order: <b style="color:var(--text)">${esc(o.id)}</b></div>

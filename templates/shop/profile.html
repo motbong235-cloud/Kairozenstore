@@ -110,9 +110,56 @@ a{color:var(--blue2);text-decoration:none}
 .field label{display:block;font-size:12px;font-weight:600;color:var(--muted);margin-bottom:6px}
 .field input{width:100%;padding:12px 14px;border-radius:12px;border:1px solid var(--line);background:#f8fafc;outline:none}
 .field input:focus{border-color:var(--blue);background:#fff}
+/* Official KHQR card (Bakong / ABA style) */
+.khqr-card{
+  width:100%;max-width:300px;margin:0 auto 14px;
+  background:#fff;border-radius:14px;overflow:hidden;
+  box-shadow:0 8px 28px rgba(15,23,42,.12),0 0 0 1px rgba(15,23,42,.06);
+  position:relative;
+}
+.khqr-card .khqr-head{
+  background:#E11D2E;color:#fff;padding:12px 16px 14px;
+  display:flex;align-items:center;justify-content:space-between;
+  position:relative;
+}
+.khqr-card .khqr-head::after{
+  content:"";position:absolute;right:0;top:0;width:48px;height:100%;
+  background:linear-gradient(135deg,transparent 50%,#c41a28 50%);
+  opacity:.9;
+}
+.khqr-card .khqr-logo{
+  font-weight:900;font-size:18px;letter-spacing:.04em;
+  font-family:system-ui,-apple-system,sans-serif;
+}
+.khqr-card .khqr-logo span{font-weight:500;opacity:.95}
+.khqr-card .khqr-body{padding:14px 16px 8px;text-align:left}
+.khqr-card .khqr-merchant{
+  font-size:13px;font-weight:700;color:#0f172a;text-transform:uppercase;
+  letter-spacing:.02em;line-height:1.3;
+}
+.khqr-card .khqr-amount{
+  font-size:20px;font-weight:800;color:#0f172a;margin-top:4px;
+}
+.khqr-card .khqr-amount small{font-size:12px;font-weight:600;color:#64748b;margin-left:4px}
+.khqr-card .khqr-dash{
+  border:none;border-top:1.5px dashed #cbd5e1;margin:12px 16px 0;
+}
+.khqr-card .khqr-qr{
+  padding:14px 20px 18px;display:flex;justify-content:center;align-items:center;
+  background:#fff;
+}
+.khqr-card .khqr-qr img{
+  width:100%;max-width:220px;height:auto;aspect-ratio:1;object-fit:contain;
+  display:block;border:none;padding:0;margin:0;border-radius:0;background:#fff;
+}
+/* When image is already full official card from KHPAY */
+.khqr-card.full-image{max-width:320px;padding:0}
+.khqr-card.full-image .khqr-qr{padding:0}
+.khqr-card.full-image .khqr-qr img{max-width:100%;width:100%;border-radius:14px}
 .pay-box{text-align:center}
-.pay-box img{width:200px;height:200px;border-radius:12px;border:1px solid var(--line);padding:8px;background:#fff}
-.pay-box .amt{font-size:22px;font-weight:800;color:var(--red);margin:10px 0}
+.pay-box .amt-out{font-size:13px;color:var(--muted);margin-bottom:10px}
+.pay-box .order-id{font-size:12px;color:var(--faint);margin-top:10px}
+.pay-box .order-id b{color:var(--text);font-family:ui-monospace,monospace}
 .actions{display:flex;gap:8px;margin-top:10px}
 .actions .btn{flex:1;text-align:center}
 .toast{position:fixed;top:14px;left:50%;transform:translateX(-50%);z-index:100;background:#052e16;color:#bbf7d0;padding:11px 16px;border-radius:12px;font-weight:700;font-size:13px;max-width:90%}
@@ -122,6 +169,44 @@ a{color:var(--blue2);text-decoration:none}
 .perks li{display:flex;gap:10px;align-items:center;font-size:13px}
 .perks i{flex:0 0 26px;height:26px;border-radius:8px;background:var(--blue-soft);color:var(--blue);display:grid;place-items:center;font-style:normal;font-size:13px}
 .gbox{display:flex;justify-content:center;min-height:44px;margin:14px 0 6px}
+
+.quick{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin:14px 0}
+.quick a,.quick button{
+  display:flex;flex-direction:column;align-items:center;gap:6px;
+  background:var(--card);border:1px solid var(--line);border-radius:14px;
+  padding:12px 6px;font-size:11px;font-weight:700;color:var(--text);
+  box-shadow:var(--shadow);text-decoration:none;
+}
+.quick svg{width:20px;height:20px;stroke:var(--blue);fill:none;stroke-width:2}
+.quick .t-red svg{stroke:var(--red)}
+.filters{display:flex;gap:6px;overflow-x:auto;padding:2px 0 10px;scrollbar-width:none}
+.filters::-webkit-scrollbar{display:none}
+.filters button{
+  flex:0 0 auto;padding:7px 12px;border-radius:99px;border:1px solid var(--line);
+  font-size:12px;font-weight:700;background:#fff;color:var(--muted)
+}
+.filters button.on{background:var(--blue);color:#fff;border-color:var(--blue)}
+.tips{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:14px;margin:14px 0;box-shadow:var(--shadow)}
+.tips h3{font-size:13px;font-weight:800;margin-bottom:8px}
+.tips li{font-size:12px;color:var(--muted);line-height:1.55;margin:4px 0 4px 16px}
+.member{font-size:11px;color:var(--faint);margin-top:4px}
+.order .row-acts{display:flex;gap:6px;margin-top:8px;flex-wrap:wrap}
+.order .row-acts button,.order .row-acts a{
+  font-size:11px;font-weight:700;padding:6px 10px;border-radius:8px;
+  background:var(--blue-soft);color:var(--blue);border:none;text-decoration:none
+}
+.order .row-acts .copy{background:var(--green-bg);color:var(--green)}
+.support-card{
+  background:linear-gradient(135deg,#1d4ed8,#2563eb);color:#fff;
+  border-radius:16px;padding:16px;margin:14px 0;box-shadow:var(--shadow)
+}
+.support-card h3{font-size:14px;font-weight:800;margin-bottom:4px}
+.support-card p{font-size:12px;opacity:.9;margin-bottom:10px}
+.support-card a{
+  display:inline-block;background:#fff;color:var(--blue);font-weight:800;
+  font-size:12px;padding:8px 14px;border-radius:10px;text-decoration:none
+}
+
 </style>
 </head>
 <body>
@@ -160,6 +245,7 @@ a{color:var(--blue2);text-decoration:none}
         <div style="min-width:0">
           <h1 id="uname">—</h1>
           <div class="em" id="uemail">—</div>
+          <div class="member" id="umember"></div>
         </div>
       </div>
       <div class="bal">
@@ -172,17 +258,59 @@ a{color:var(--blue2);text-decoration:none}
       </div>
     </div>
 
+    <div class="quick">
+      <button type="button" onclick="openTopup()">
+        <svg viewBox="0 0 24 24"><path d="M12 1v22M17 5H9.5a3.5 3.5 0 000 7h5a3.5 3.5 0 010 7H6"/></svg>
+        Top up
+      </button>
+      <a href="/">
+        <svg viewBox="0 0 24 24"><path d="M6 2L3 6v14a2 2 0 002 2h14a2 2 0 002-2V6l-3-4z"/><path d="M3 6h18"/><path d="M16 10a4 4 0 01-8 0"/></svg>
+        Shop
+      </a>
+      <button type="button" onclick="scrollOrders()">
+        <svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><path d="M14 2v6h6"/><path d="M16 13H8"/><path d="M16 17H8"/><path d="M10 9H8"/></svg>
+        Orders
+      </button>
+      <button type="button" class="t-red" onclick="doLogout()">
+        <svg viewBox="0 0 24 24"><path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4"/><path d="M16 17l5-5-5-5"/><path d="M21 12H9"/></svg>
+        Logout
+      </button>
+    </div>
+
     <div class="stats">
       <div class="stat"><div class="n" id="stOrders">0</div><div class="l">Orders</div></div>
       <div class="stat"><div class="n" id="stPaid">0</div><div class="l">Paid</div></div>
       <div class="stat"><div class="n" id="stSpent">$0</div><div class="l">Spent</div></div>
+      <div class="stat"><div class="n" id="stTopup">0</div><div class="l">Top-up</div></div>
     </div>
 
-    <div class="section-head">
-      <h2>ប្រវត្តិការទិញ</h2>
+    <div class="tips">
+      <h3>💡 របៀបប្រើ</h3>
+      <ul>
+        <li>ដាក់លុយ Wallet → ទិញ product បានភ្លាម (មិនបាច់ QR រាល់ដង)</li>
+        <li>បន្ទាប់ពីបង់លុយ — account នឹងបង្ហាញក្នុងប្រវត្តិ · អាច Copy បាន</li>
+        <li>Order មិនទាន់បង់ — ចុច «បន្តបង់» ឬ Top up ម្តងទៀត</li>
+      </ul>
+    </div>
+
+    <div class="section-head" id="ordersHead">
+      <h2>ប្រវត្តិ</h2>
       <a href="/">Shop →</a>
     </div>
+    <div class="filters" id="flt">
+      <button type="button" class="on" data-f="all" onclick="setFilter('all')">ទាំងអស់</button>
+      <button type="button" data-f="paid" onclick="setFilter('paid')">បានបង់</button>
+      <button type="button" data-f="pending" onclick="setFilter('pending')">រង់ចាំ</button>
+      <button type="button" data-f="topup" onclick="setFilter('topup')">Top-up</button>
+      <button type="button" data-f="product" onclick="setFilter('product')">Products</button>
+    </div>
     <div id="orders"><div class="empty">Loading...</div></div>
+
+    <div class="support-card">
+      <h3>ត្រូវការជំនួយ?</h3>
+      <p>មានបញ្ហា order / ដាក់លុយ — ទំនាក់ទំនង Admin</p>
+      <a id="supLink" href="/" target="_blank" rel="noopener">ទំនាក់ Admin</a>
+    </div>
   </div>
 </div>
 
@@ -240,6 +368,7 @@ function showUser(u){
   $('#gate').classList.add('hidden');
   $('#panel').classList.remove('hidden');
   $('#uname').textContent = u.name || 'User';
+  if($('#umember')){ $('#umember').textContent = (USER&&USER.created_at) ? ('Member since '+new Date(USER.created_at).toLocaleDateString()) : ''; }
   $('#uemail').textContent = u.email || '';
   $('#ubal').textContent = money(u.balance);
   if(u.picture){
@@ -248,7 +377,7 @@ function showUser(u){
     $('#pic').classList.add('hidden'); $('#ph').classList.remove('hidden');
     $('#ph').textContent = (u.name||'U').charAt(0).toUpperCase();
   }
-  loadOrders();
+  loadOrders(); loadSupport();
 }
 
 async function loadMe(){
@@ -260,25 +389,96 @@ async function loadMe(){
   showUser(r.user || null);
 }
 
+let ORDERS_CACHE = [];
+let ORDER_FILTER = 'all';
+
+
+async function loadSupport(){
+  try{
+    const r = await api('catalog');
+    const s = (r.settings||{});
+    const a = $('#supLink');
+    if(!a) return;
+    const tg = (s.TELEGRAM||s.SUPPORT_TELEGRAM||s.ADMIN_TELEGRAM||'').trim();
+    const url = (s.SUPPORT_URL||'').trim();
+    if(tg){ a.href = tg.startsWith('http')?tg:('https://t.me/'+tg.replace('@','')); a.textContent = 'Telegram Admin'; }
+    else if(url){ a.href = url; }
+  }catch(e){}
+}
+
 async function loadOrders(){
   const r = await api('auth/orders');
   const el = $('#orders');
   if(!r.ok){ el.innerHTML = `<div class="empty">${esc(r.error||'Fail')}</div>`; return; }
-  const list = r.orders || [];
-  const paid = list.filter(o=>o.status==='paid');
+  ORDERS_CACHE = r.orders || [];
+  const list = ORDERS_CACHE;
+  const paid = list.filter(o=>o.status==='paid' && o.type!=='topup');
+  const topups = list.filter(o=>o.type==='topup' && o.status==='paid');
   const spent = paid.reduce((s,o)=>s+Number(o.price||0),0);
   $('#stOrders').textContent = list.length;
   $('#stPaid').textContent = paid.length;
   $('#stSpent').textContent = '$'+spent.toFixed(0);
-  if(!list.length){ el.innerHTML = '<div class="empty">មិនទាន់មានការទិញ · <a href="/">ទៅហាង</a></div>'; return; }
+  if($('#stTopup')) $('#stTopup').textContent = topups.length;
+  renderOrders();
+}
+
+function setFilter(f){
+  ORDER_FILTER = f || 'all';
+  document.querySelectorAll('#flt button').forEach(b=>{
+    b.classList.toggle('on', b.dataset.f === ORDER_FILTER);
+  });
+  renderOrders();
+}
+
+function scrollOrders(){
+  const el = $('#ordersHead') || $('#orders');
+  if(el) el.scrollIntoView({behavior:'smooth', block:'start'});
+}
+
+function copyText(txt){
+  if(!txt) return;
+  if(navigator.clipboard && navigator.clipboard.writeText){
+    navigator.clipboard.writeText(txt).then(()=>toast('Copied ✓')).catch(()=>fallbackCopy(txt));
+  } else fallbackCopy(txt);
+}
+function fallbackCopy(txt){
+  const ta=document.createElement('textarea'); ta.value=txt; document.body.appendChild(ta); ta.select();
+  try{ document.execCommand('copy'); toast('Copied ✓'); }catch(e){ toast('Copy failed', true); }
+  ta.remove();
+}
+
+function renderOrders(){
+  const el = $('#orders');
+  if(!el) return;
+  let list = ORDERS_CACHE.slice();
+  if(ORDER_FILTER==='paid') list = list.filter(o=>o.status==='paid');
+  else if(ORDER_FILTER==='pending') list = list.filter(o=>o.status!=='paid');
+  else if(ORDER_FILTER==='topup') list = list.filter(o=>o.type==='topup');
+  else if(ORDER_FILTER==='product') list = list.filter(o=>o.type!=='topup');
+
+  if(!list.length){
+    el.innerHTML = '<div class="empty">មិនមានទិន្នន័យក្នុង filter នេះ · <a href="/">ទៅហាង</a></div>';
+    return;
+  }
   el.innerHTML = list.map(o=>{
     const st = o.status==='paid'?'paid':(o.status==='waiting_confirm'?'wait':'pending');
     const label = o.status==='paid'?'PAID':(o.status==='waiting_confirm'?'WAIT':'PENDING');
     const type = o.type==='topup' ? 'Top-up' : 'Product';
+    const acts = [];
+    if(o.delivery){
+      const safe = String(o.delivery).replace(/\\/g,'\\\\').replace(/`/g,'\\`').replace(/\$/g,'\\$');
+      acts.push('<button type="button" class="copy" onclick="copyText('+JSON.stringify(String(o.delivery))+')">Copy account</button>');
+    }
+    if(o.status!=='paid' && o.type!=='topup'){
+      acts.push('<a href="/">បន្តទិញ</a>');
+    }
+    if(o.status!=='paid' && o.type==='topup'){
+      acts.push('<button type="button" onclick="openTopup()">Top up ម្តងទៀត</button>');
+    }
     return `<div class="order">
       <div class="row">
         <div style="min-width:0">
-          <div class="name">${esc(o.product_name)}</div>
+          <div class="name">${esc(o.product_name||type)}</div>
           <div class="meta">${type} · ${esc(o.id)} · ${o.created_at?new Date(o.created_at).toLocaleString():''}</div>
         </div>
         <div style="text-align:right;flex-shrink:0">
@@ -287,9 +487,11 @@ async function loadOrders(){
         </div>
       </div>
       ${o.delivery?`<div class="del">${esc(o.delivery)}</div>`:''}
+      ${acts.length?`<div class="row-acts">${acts.join('')}</div>`:''}
     </div>`;
   }).join('');
 }
+
 
 function openTopup(){
   if(!USER){ openLogin(); return; }
@@ -315,6 +517,52 @@ function openTopup(){
   };
 }
 
+
+
+function khqrCardHtml(pay, amount, qr){
+  const shop = esc(pay.SHOP_NAME||'Kairozen Store');
+  // KHPAY often returns full branded card image already
+  const full = qr && (String(qr).indexOf('data:image')===0 || String(qr).indexOf('http')===0);
+  if(full){
+    return `<div class="khqr-card full-image"><div class="khqr-qr"><img src="${esc(qr)}" alt="KHQR"></div></div>`;
+  }
+  const amt = (typeof amount==='number'?amount:Number(amount||0)).toFixed(2);
+  return `<div class="khqr-card">
+    <div class="khqr-head"><div class="khqr-logo">KH<span>QR</span></div></div>
+    <div class="khqr-body">
+      <div class="khqr-merchant">${shop}</div>
+      <div class="khqr-amount">${amt}<small>USD</small></div>
+    </div>
+    <hr class="khqr-dash">
+    <div class="khqr-qr">${qr?`<img src="${esc(qr)}" alt="KHQR">`:'<div style="color:#ef4444;padding:24px;font-size:13px">No QR</div>'}</div>
+  </div>`;
+}
+
+function mergePay(r){
+  return Object.assign({}, r.payment||{}, r.khmer_system||{}, r.payment_data||{});
+}
+function abaOpenHref(pay){
+  if(!pay) return '';
+  const dl = (pay.ABA_DEEPLINK||pay.abapay_deeplink||'').trim();
+  const qs = (pay.QR_STRING||pay.qr_string||'').trim();
+  const url = (pay.PAYMENT_URL||pay.payment_url||'').trim();
+  if(dl) return '/open-aba?dl='+encodeURIComponent(dl);
+  if(qs) return '/open-aba?qr='+encodeURIComponent(qs);
+  if(url) return url;
+  return '';
+}
+function payActionsHtml(pay, orderId){
+  const aba = abaOpenHref(pay);
+  let h = '';
+  if(aba){
+    h += `<a class="btn btn-primary" href="${aba}" target="_blank" rel="noopener" style="display:block;text-align:center;text-decoration:none;margin-top:10px;background:#ed1c24;border:none;color:#fff;padding:13px;border-radius:12px;font-weight:800">🏦 បើក ABA Mobile</a>`;
+  } else if(pay && (pay.PAYMENT_QR||pay.KS_DYNAMIC)){
+    h += `<div style="font-size:11px;color:var(--muted);margin:8px 0">ស្កេន QR ក្នុង ABA / ACLEDA / Wing</div>`;
+  }
+  h += `<button class="btn btn-primary" style="width:100%;margin-top:8px" type="button" id="btnPaid" onclick="confirmTop('${orderId}')">I have paid</button>`;
+  return h;
+}
+
 async function doTopup(){
   const amount = Number($('#amtIn')?.value||0);
   const btn = $('#btnTop');
@@ -326,14 +574,15 @@ async function doTopup(){
     if(btn){ btn.disabled=false; btn.textContent='Pay KHQR'; }
     return;
   }
-  const o = r.order, pay = r.payment||{}, qr = pay.PAYMENT_QR||'';
+  const o = r.order, pay = mergePay(r), qr = pay.PAYMENT_QR||'';
   if(btn) btn.style.display='none';
   $('#topBody').innerHTML = `<div class="pay-box">
-    <div class="amt">${money(o.price)}</div>
-    ${qr?`<img src="${esc(qr)}" alt="QR">`:`<div style="color:var(--red);padding:12px;font-size:13px">${esc(r.ks_error||'No QR')}</div>`}
-    <div style="font-size:11px;color:var(--faint)">Order ${esc(o.id)}</div>
+    <div class="amt-out">ស្កេនដោយ App ធនាគារ</div>
+    ${qr ? khqrCardHtml(pay, o.price, qr) : `<div style="color:var(--red);padding:12px;font-size:13px">${esc(r.ks_error||'No QR')}</div>`}
+    <div class="order-id">Order ${esc(o.id)}</div>
     <div id="paySt" style="font-size:12px;color:var(--muted);margin:8px 0">Waiting...</div>
-    <button class="btn btn-primary" style="width:100%;margin-top:8px" type="button" id="btnPaid" onclick="confirmTop('${esc(o.id)}')">I have paid</button>
+    <p style="font-size:11px;color:var(--muted);margin-top:6px">ស្កេន QR ឬ ចុចប៊ូតុងបើក ABA Mobile</p>
+    ${payActionsHtml(pay, o.id)}
   </div>`;
   if(qr) startPoll(o.id);
 }

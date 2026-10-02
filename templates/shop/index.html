@@ -65,6 +65,13 @@ a{color:var(--blue2);text-decoration:none}
 .promo .chip{font-size:10px;font-weight:700;background:rgba(255,255,255,.18);padding:5px 10px;border-radius:99px}
 .promo .off{position:absolute;right:12px;top:12px;background:#fff;color:var(--blue);font-weight:800;font-size:13px;padding:8px 12px;border-radius:12px;text-align:center;line-height:1.2}
 .promo .off b{display:block;font-size:20px}
+.promo.has-img{padding:0;background:#0f172a}
+.promo.has-img .promo-inner{padding:18px 16px;background:linear-gradient(180deg,rgba(15,23,42,.15),rgba(15,23,42,.55))}
+.promo.has-img #promoImgWrap{margin:0!important}
+.promo.has-img #promoImg{max-height:180px;width:100%;object-fit:cover;border-radius:0;display:block}
+.promo.img-only .promo-text{display:none}
+.promo.img-only #promoImg{max-height:220px}
+
 
 /* cats */
 .cats{display:flex;gap:8px;padding:4px 14px 12px;overflow-x:auto;-webkit-overflow-scrolling:touch;scrollbar-width:none}
@@ -122,7 +129,7 @@ a{color:var(--blue2);text-decoration:none}
 /* modal */
 .overlay{position:fixed;inset:0;background:rgba(15,23,42,.45);z-index:80;display:flex;align-items:flex-end;justify-content:center}
 @media(min-width:480px){.overlay{align-items:center;padding:20px}}
-.modal{width:100%;max-width:420px;background:#fff;border-radius:20px 20px 0 0;padding:20px;max-height:90vh;overflow-y:auto;box-shadow:0 -8px 40px rgba(0,0,0,.12)}
+.modal{width:100%;max-width:440px;background:#fff;border-radius:20px 20px 0 0;padding:18px 18px 22px;max-height:92vh;overflow-y:auto;box-shadow:0 -8px 40px rgba(0,0,0,.12)}
 @media(min-width:480px){.modal{border-radius:18px}}
 .modal h3{font-size:17px;font-weight:800;margin-bottom:4px}
 .modal .sub{font-size:12px;color:var(--muted);margin-bottom:14px}
@@ -134,9 +141,56 @@ a{color:var(--blue2);text-decoration:none}
 .actions .btn{flex:1;padding:12px;border-radius:12px;font-weight:700}
 .btn-ghost{background:#f1f5f9;color:var(--text)}
 .btn-primary{background:var(--blue);color:#fff}
+/* Official KHQR card (Bakong / ABA style) */
+.khqr-card{
+  width:100%;max-width:300px;margin:0 auto 14px;
+  background:#fff;border-radius:14px;overflow:hidden;
+  box-shadow:0 8px 28px rgba(15,23,42,.12),0 0 0 1px rgba(15,23,42,.06);
+  position:relative;
+}
+.khqr-card .khqr-head{
+  background:#E11D2E;color:#fff;padding:12px 16px 14px;
+  display:flex;align-items:center;justify-content:space-between;
+  position:relative;
+}
+.khqr-card .khqr-head::after{
+  content:"";position:absolute;right:0;top:0;width:48px;height:100%;
+  background:linear-gradient(135deg,transparent 50%,#c41a28 50%);
+  opacity:.9;
+}
+.khqr-card .khqr-logo{
+  font-weight:900;font-size:18px;letter-spacing:.04em;
+  font-family:system-ui,-apple-system,sans-serif;
+}
+.khqr-card .khqr-logo span{font-weight:500;opacity:.95}
+.khqr-card .khqr-body{padding:14px 16px 8px;text-align:left}
+.khqr-card .khqr-merchant{
+  font-size:13px;font-weight:700;color:#0f172a;text-transform:uppercase;
+  letter-spacing:.02em;line-height:1.3;
+}
+.khqr-card .khqr-amount{
+  font-size:20px;font-weight:800;color:#0f172a;margin-top:4px;
+}
+.khqr-card .khqr-amount small{font-size:12px;font-weight:600;color:#64748b;margin-left:4px}
+.khqr-card .khqr-dash{
+  border:none;border-top:1.5px dashed #cbd5e1;margin:12px 16px 0;
+}
+.khqr-card .khqr-qr{
+  padding:14px 20px 18px;display:flex;justify-content:center;align-items:center;
+  background:#fff;
+}
+.khqr-card .khqr-qr img{
+  width:100%;max-width:220px;height:auto;aspect-ratio:1;object-fit:contain;
+  display:block;border:none;padding:0;margin:0;border-radius:0;background:#fff;
+}
+/* When image is already full official card from KHPAY */
+.khqr-card.full-image{max-width:320px;padding:0}
+.khqr-card.full-image .khqr-qr{padding:0}
+.khqr-card.full-image .khqr-qr img{max-width:100%;width:100%;border-radius:14px}
 .pay-box{text-align:center}
-.pay-box img{width:200px;height:200px;border-radius:12px;background:#fff;border:1px solid var(--line);padding:8px}
-.pay-box .amt{font-size:22px;font-weight:800;color:var(--red);margin:10px 0 4px}
+.pay-box .amt-out{font-size:13px;color:var(--muted);margin-bottom:10px}
+.pay-box .order-id{font-size:12px;color:var(--faint);margin-top:10px}
+.pay-box .order-id b{color:var(--text);font-family:ui-monospace,monospace}
 .del-box{background:var(--green-bg);border:1px solid #bbf7d0;border-radius:12px;padding:14px;margin-top:10px;word-break:break-all;text-align:left}
 .del-box b{display:block;font-size:11px;color:var(--green);margin-bottom:6px}
 .toast{position:fixed;top:14px;left:50%;transform:translateX(-50%);z-index:100;background:#052e16;color:#bbf7d0;padding:11px 16px;border-radius:12px;font-weight:700;font-size:13px;max-width:90%}
@@ -197,8 +251,8 @@ footer.foot{text-align:center;color:var(--faint);font-size:11px;padding:0 14px 9
     <span>{{ site.name }}</span>
   </a>
   <div class="top-sp"></div>
-  <button class="icon-btn" type="button" onclick="openTrack()" title="តាមដានការកម្ម៉ង់" aria-label="Track">
-    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.3-4.3"/></svg>
+  <button class="icon-btn" type="button" onclick="goTopup()" title="Top up wallet" aria-label="Top up" style="color:var(--blue)">
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 1v22M17 5H9.5a3.5 3.5 0 000 7h5a3.5 3.5 0 010 7H6"/></svg>
   </button>
   <div id="userSlot"></div>
   <!-- Admin panel is private — not linked on storefront -->
@@ -245,9 +299,9 @@ footer.foot{text-align:center;color:var(--faint);font-size:11px;padding:0 14px 9
     <svg viewBox="0 0 24 24"><path d="M6 2L3 6v14a2 2 0 002 2h14a2 2 0 002-2V6l-3-4z"/><path d="M3 6h18"/><path d="M16 10a4 4 0 01-8 0"/></svg>
     Shop
   </button>
-  <button type="button" onclick="openTrack()">
-    <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.3-4.3"/></svg>
-    Track
+  <button type="button" onclick="goTopup()">
+    <svg viewBox="0 0 24 24"><path d="M12 1v22M17 5H9.5a3.5 3.5 0 000 7h5a3.5 3.5 0 010 7H6"/></svg>
+    Top up
   </button>
   <button type="button" onclick="window.open(($('#tg')||{}).href||'#','_blank')">
     <svg viewBox="0 0 24 24"><path d="M22 2L11 13"/><path d="M22 2l-7 20-4-9-9-4 20-7z"/></svg>
@@ -308,11 +362,25 @@ async function load(){
   }
   if(s.BANNER_TITLE) { const el=$('#promoTitle'); if(el) el.textContent = s.BANNER_TITLE; }
   if(s.BANNER_SUBTITLE) { const el=$('#promoSub'); if(el) el.textContent = s.BANNER_SUBTITLE; }
-  if(s.BANNER_OFF) { const el=$('#promoOff'); if(el) el.textContent = s.BANNER_OFF; }
+  if(s.BANNER_OFF) {
+    const el=$('#promoOff'), wrap=$('#promoOffWrap');
+    if(el) el.textContent = s.BANNER_OFF;
+    if(wrap) wrap.style.display = s.BANNER_OFF ? '' : 'none';
+  }
   if(s.SITE_NAME) { const el=$('#promoEye'); if(el) el.textContent = 'WELCOME TO '+(s.SITE_NAME||'').toUpperCase(); }
+  const promo = document.querySelector('.promo');
   if(s.BANNER_IMAGE) {
     const w=$('#promoImgWrap'), img=$('#promoImg');
-    if(w&&img){ img.src=s.BANNER_IMAGE; w.classList.remove('hidden'); }
+    if(w&&img){
+      img.src = s.BANNER_IMAGE;
+      img.onerror = ()=>{ w.classList.add('hidden'); if(promo) promo.classList.remove('has-img'); };
+      w.classList.remove('hidden');
+      if(promo) promo.classList.add('has-img');
+    }
+  } else {
+    const w=$('#promoImgWrap');
+    if(w) w.classList.add('hidden');
+    if(promo) promo.classList.remove('has-img');
   }
   renderCats();
   renderFlash();
@@ -387,6 +455,60 @@ function renderProducts(){
 
 function closeModal(){ if(POLL) clearInterval(POLL); document.querySelector('.overlay')?.remove(); }
 
+
+
+function khqrCardHtml(pay, amount, qr){
+  const shop = esc(pay.SHOP_NAME||'Kairozen Store');
+  // KHPAY often returns full branded card image already
+  const full = qr && (String(qr).indexOf('data:image')===0 || String(qr).indexOf('http')===0);
+  if(full){
+    return `<div class="khqr-card full-image"><div class="khqr-qr"><img src="${esc(qr)}" alt="KHQR"></div></div>`;
+  }
+  const amt = (typeof amount==='number'?amount:Number(amount||0)).toFixed(2);
+  return `<div class="khqr-card">
+    <div class="khqr-head"><div class="khqr-logo">KH<span>QR</span></div></div>
+    <div class="khqr-body">
+      <div class="khqr-merchant">${shop}</div>
+      <div class="khqr-amount">${amt}<small>USD</small></div>
+    </div>
+    <hr class="khqr-dash">
+    <div class="khqr-qr">${qr?`<img src="${esc(qr)}" alt="KHQR">`:'<div style="color:#ef4444;padding:24px;font-size:13px">No QR</div>'}</div>
+  </div>`;
+}
+
+function mergePay(r){
+  // Combine payment + khmer_system/payment alias so ABA fields never drop
+  return Object.assign({}, r.payment||{}, r.khmer_system||{}, r.payment_data||{});
+}
+function abaOpenHref(pay){
+  if(!pay) return '';
+  const dl = (pay.ABA_DEEPLINK||pay.abapay_deeplink||'').trim();
+  const qs = (pay.QR_STRING||pay.qr_string||'').trim();
+  const url = (pay.PAYMENT_URL||pay.payment_url||'').trim();
+  if(dl) return '/open-aba?dl='+encodeURIComponent(dl);
+  if(qs) return '/open-aba?qr='+encodeURIComponent(qs);
+  // Fallback: KHPAY hosted checkout page
+  if(url) return url;
+  return '';
+}
+function payActionsHtml(pay, orderId){
+  const aba = abaOpenHref(pay);
+  const hasQr = !!(pay && (pay.PAYMENT_QR||pay.KS_DYNAMIC||pay.ABA_OPEN));
+  let h = '';
+  if(aba){
+    h += `<a class="btn-buy" href="${aba}" target="_blank" rel="noopener" style="display:block;text-align:center;text-decoration:none;margin-top:10px;background:#ed1c24;color:#fff;padding:13px;border-radius:12px;font-weight:800">🏦 បើក ABA Mobile</a>`;
+  } else if(hasQr){
+    // Still show hint — user can scan QR
+    h += `<div style="font-size:11px;color:var(--muted);margin:8px 0">ស្កេន QR ក្នុង ABA / ACLEDA / Wing</div>`;
+  }
+  h += `<button class="btn-buy" type="button" id="btnPaid" onclick="confirmPaid('${esc(orderId)}')" style="margin-top:8px">I have paid</button>`;
+  return h;
+}
+
+function goTopup(){
+  if(!USER){ openLogin('សូមចូលគណនី Google ដើម្បី Top up'); return; }
+  location.href = '/profile';
+}
 function buy(id){
   const p = (CATALOG.products||[]).find(x=>x.id===id);
   if(!p||Number(p.stock||0)<=0){ toast('Sold out', true); return; }
@@ -437,16 +559,15 @@ async function createOrder(id, withBalance){
     toast('Paid with balance ✓');
     return;
   }
-  const o = r.order, pay = r.payment||{};
+  const o = r.order, pay = mergePay(r);
   const qr = (pay && pay.PAYMENT_QR)||'';
   if(btn) btn.style.display='none';
   box.innerHTML = `<div class="pay-box">
-    <div style="font-size:12px;color:var(--muted)">${esc(pay.SHOP_NAME||'Kairozen Store')}${pay.KS_DYNAMIC?' · KHPAY':''}</div>
-    <div class="amt">${money(o.price)}</div>
-    ${qr?`<img src="${esc(qr)}" alt="KHQR">`:`<div style="padding:16px;color:var(--red);font-size:13px">No QR<br><span style="color:var(--muted);font-size:12px">${esc(r.ks_error||'Payment not configured yet')}</span></div>`}
-    <div style="font-size:11px;color:var(--faint);margin-top:6px">Order: <b style="color:var(--text)">${esc(o.id)}</b></div>
-    <div id="paySt" style="font-size:12px;color:var(--muted);margin:8px 0">Waiting for payment...</div>
-    <button class="btn-buy" type="button" id="btnPaid" onclick="confirmPaid('${esc(o.id)}')">I have paid</button>
+    <div class="amt-out">${pay.KS_DYNAMIC?'KHPAY · ':''}ស្កេនដោយ App ធនាគារ (ABA / ACLEDA / Wing…)</div>
+    ${qr ? khqrCardHtml(pay, o.price, qr) : `<div style="padding:20px;color:var(--red);font-size:13px">No QR<br><span style="color:var(--muted);font-size:12px">${esc(r.ks_error||'Payment not configured yet')}</span></div>`}
+    <div class="order-id">Order: <b>${esc(o.id)}</b></div>
+    <div id="paySt" class="meta" style="margin:10px 0;font-size:12px;color:var(--muted)">Waiting for payment...</div>
+    ${payActionsHtml(pay, o.id)}
   </div>`;
   toast('Order '+o.id);
   if(qr) startPoll(o.id);

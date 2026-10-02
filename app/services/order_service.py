@@ -113,15 +113,24 @@ def _make_khpay_qr(data: dict, order: dict, price: float, note: str = "") -> tup
                 qr = resp.get("qr_image") or ""
                 order["payment_qr"] = qr
                 order["khpay_payment_url"] = resp.get("payment_url") or ""
+                order["khpay_qr_string"] = resp.get("qr_string") or ""
+                order["abapay_deeplink"] = resp.get("abapay_deeplink") or ""
                 pay["PAYMENT_QR"] = qr
                 pay["PAYMENT_URL"] = resp.get("payment_url") or ""
+                pay["QR_STRING"] = (resp.get("qr_string") or "").strip()
+                pay["ABA_DEEPLINK"] = (resp.get("abapay_deeplink") or "").strip()
                 pay["KS_DYNAMIC"] = True
                 pay["PROVIDER"] = "khpay"
+                # Always mark ABA open available when we have QR or deeplink or payment page
+                pay["ABA_OPEN"] = bool(
+                    pay["ABA_DEEPLINK"] or pay["QR_STRING"] or pay["PAYMENT_URL"] or qr
+                )
                 ks_data = {
                     "transaction_id": resp.get("transaction_id"),
                     "qr_image": qr,
                     "payment_url": resp.get("payment_url"),
-                    "abapay_deeplink": resp.get("abapay_deeplink"),
+                    "qr_string": resp.get("qr_string") or "",
+                    "abapay_deeplink": resp.get("abapay_deeplink") or "",
                 }
             else:
                 order["ks_error"] = resp.get("error") or "KHPAY generate failed"

@@ -144,8 +144,9 @@ th{color:var(--muted);font-size:10px;text-transform:uppercase}
 
   <div id="t-users" class="card hidden">
     <h3>Google users</h3>
+    <p class="help" style="margin-bottom:10px">Last IP កត់ពេល login (X-Forwarded-For លើ Render) · hover IP ដើម្បីមើល history · មិនបង្ហាញជាសាធារណៈ</p>
     <div style="overflow-x:auto"><table>
-      <thead><tr><th>User</th><th>Email</th><th>Joined</th><th>Last login</th></tr></thead>
+      <thead><tr><th>User</th><th>Email</th><th>Balance</th><th>Last IP</th><th>Joined</th><th>Last login</th></tr></thead>
       <tbody id="userRows"></tbody>
     </table></div>
   </div>
@@ -190,13 +191,22 @@ th{color:var(--muted);font-size:10px;text-transform:uppercase}
     </div>
     <div class="ks" style="background:#eff6ff;border-color:#bfdbfe">
       <h4>Homepage Banner</h4>
-      <div class="field"><label>Banner Title</label><input id="s_BANNER_TITLE" placeholder="NEW CUSTOMERS!"></div>
+            <div class="field"><label>Banner Title</label><input id="s_BANNER_TITLE" placeholder="NEW CUSTOMERS!"></div>
       <div class="field"><label>Banner Subtitle</label><input id="s_BANNER_SUBTITLE" placeholder="Premium accounts · Instant delivery"></div>
-      <div class="row2">
+      <div class="row">
         <div class="field"><label>OFF badge (e.g. 10%)</label><input id="s_BANNER_OFF" placeholder="10%"></div>
         <div class="field"><label>Banner image URL</label><input id="s_BANNER_IMAGE" placeholder="/api/media/..."></div>
       </div>
-      <div class="field"><label>Upload banner image</label><input type="file" id="bannerFile" accept="image/*" onchange="uploadBanner()"></div>
+      <div class="field">
+        <label>Upload banner image (PNG/JPG · max 1.5MB)</label>
+        <input type="file" id="bannerFile" accept="image/png,image/jpeg,image/webp,image/gif" onchange="uploadBanner()">
+        <div class="help">Upload → auto save URL → ចុច Save Settings បើចង់ផ្លាស់ title/subtitle</div>
+      </div>
+      <div id="bannerPrevWrap" style="margin-top:8px;display:none">
+        <img id="bannerPrev" alt="banner" style="max-width:100%;max-height:140px;border-radius:12px;border:1px solid var(--line);object-fit:cover">
+        <div style="margin-top:6px"><button class="btn btn-ghost" type="button" onclick="clearBanner()">លុប banner image</button></div>
+      </div>
+
       <div class="field"><label>Marquee text (top blue bar)</label><input id="s_MARQUEE_TEXT" placeholder="Flash Sale · CapCut · Netflix · Instant delivery"></div>
       <div class="help">Banner បង្ហាញលើទំព័រហាង។ រូបណែនាំទទឹង ~1200px</div>
     </div>
@@ -283,13 +293,25 @@ async function load(){
   sb.innerHTML = stg.persistent
     ? `<div class="okb">✓ Data រក្សាទុកអចិន្ត្រៃយ៍ (${esc(stg.mode)}) — update website មិនបាត់ data ទេ</div>`
     : `<div class="warn"><b>⚠ Data អាចបាត់ពេល deploy!</b> Server នេះប្រើ disk បណ្តោះអាសន្ន។ សូមដាក់ <code>DATABASE_URL</code> (Postgres) ឬ Persistent Disk + <code>DATA_DIR</code> ក្នុង Render។ ឥឡូវនេះសូម Download backup ជាប្រចាំ។</div>`;
-  $('#userRows').innerHTML=(r.users||[]).map(u=>`<tr><td>${u.picture?`<img class="ava" src="${esc(u.picture)}" referrerpolicy="no-referrer" alt="">`:''}${esc(u.name||'')}</td><td>${esc(u.email||'')}</td><td class="mono" style="font-size:10px">${esc((u.created_at||'').slice(0,10))}</td><td class="mono" style="font-size:10px">${esc((u.last_login||'').slice(0,16).replace('T',' '))}</td></tr>`).join('')||'<tr><td colspan="4" style="color:var(--muted)">No users yet</td></tr>';
+  $('#userRows').innerHTML=(r.users||[]).map(u=>{
+    const hist=(u.ip_history||[]).map(h=>esc((h.ip||'')+' @ '+String(h.at||'').slice(0,16).replace('T',' '))).join(' · ');
+    const tip=hist?` title="${hist}"`:"";
+    return `<tr>
+      <td>${u.picture?`<img class="ava" src="${esc(u.picture)}" referrerpolicy="no-referrer" alt="">`:''}${esc(u.name||'')}</td>
+      <td>${esc(u.email||'')}</td>
+      <td class="mono">$${Number(u.balance||0).toFixed(2)}</td>
+      <td class="mono" style="font-size:11px;color:var(--blue)"${tip}>${esc(u.last_ip||'—')}</td>
+      <td class="mono" style="font-size:10px">${esc((u.created_at||'').slice(0,10))}</td>
+      <td class="mono" style="font-size:10px">${esc((u.last_login||'').slice(0,16).replace('T',' '))}</td>
+    </tr>`;
+  }).join('')||'<tr><td colspan="6" style="color:var(--muted)">No users yet</td></tr>';
   const set=r.settings||{};
   $('#s_REQUIRE_LOGIN').checked=!!set.REQUIRE_LOGIN;
   $('#origin').textContent=location.origin;
   ['SITE_NAME','SITE_DESCRIPTION','GOOGLE_CLIENT_ID','KHPAY_API_KEY','KHPAY_MERCHANT_ID','KHPAY_WEBHOOK_SECRET','KHPAY_CALLBACK_URL','SITE_URL','BAKONG_ID','SHOP_NAME','SITE_TAGLINE','TELEGRAM','PAYMENT_QR','BANNER_TITLE','BANNER_SUBTITLE','BANNER_OFF','BANNER_IMAGE','MARQUEE_TEXT'].forEach(k=>{
     const el=$('#s_'+k); if(el) el.value=set[k]??'';
   });
+  if($('#s_BANNER_IMAGE')?.value) showBannerPrev($('#s_BANNER_IMAGE').value);
   $('#s_ADMIN_PASSWORD').value='';
 }
 
@@ -356,6 +378,39 @@ function refreshLogo(v){
   $('#logoPrev').src=u; const t=$('#topLogo'); if(t) t.src=u;
   document.querySelectorAll('link[rel~=icon]').forEach(l=>l.href=u);
 }
+
+async function uploadBanner(){
+  const f = $('#bannerFile')?.files?.[0];
+  if(!f){ toast('ជ្រើសរើសរូប banner សិន', true); return; }
+  if(f.size > 1500000){ toast('រូបធំពេក (max 1.5MB)', true); return; }
+  const fd = new FormData();
+  fd.append('file', f);
+  toast('កំពុង upload...');
+  const r = await fetch('/api/admin/upload-image', {method:'POST', body:fd, credentials:'same-origin'})
+    .then(x=>x.json()).catch(()=>({ok:false, error:'Network'}));
+  if(!r.ok){ toast(r.error||'Upload fail', true); return; }
+  const url = r.url;
+  if($('#s_BANNER_IMAGE')) $('#s_BANNER_IMAGE').value = url;
+  showBannerPrev(url);
+  // auto-save BANNER_IMAGE into settings so storefront updates immediately
+  const body = { BANNER_IMAGE: url };
+  const s = await api('admin/settings', {method:'PUT', body: JSON.stringify(body)});
+  toast(s.ok ? 'Banner uploaded ✓' : (s.error||'Saved URL but settings fail'), !s.ok);
+  if($('#bannerFile')) $('#bannerFile').value = '';
+}
+function showBannerPrev(url){
+  const w = $('#bannerPrevWrap'), img = $('#bannerPrev');
+  if(!w||!img||!url) return;
+  img.src = url + (url.indexOf('?')>=0?'&':'?') + 't=' + Date.now();
+  w.style.display = 'block';
+}
+async function clearBanner(){
+  if($('#s_BANNER_IMAGE')) $('#s_BANNER_IMAGE').value = '';
+  const w = $('#bannerPrevWrap'); if(w) w.style.display = 'none';
+  const s = await api('admin/settings', {method:'PUT', body: JSON.stringify({BANNER_IMAGE:''})});
+  toast(s.ok?'Banner cleared':'Fail', !s.ok);
+}
+
 async function uploadLogo(){
   const f=$('#logoFile').files[0]; if(!f){toast('ជ្រើសរើសរូបភាពសិន',true);return}
   const fd=new FormData(); fd.append('file',f);

@@ -118,3 +118,68 @@ def media(filename: str):
     if (static / filename).is_file():
         return send_from_directory(current_app.static_folder, filename)
     abort(404)
+
+
+
+@bp.get("/open-aba")
+def open_aba():
+    """Redirect to ABA Mobile app (deep link). Query: dl= or qr="""
+    from flask import request, Response, redirect
+    import urllib.parse
+
+    dl = (request.args.get("dl") or "").strip()
+    qr = (request.args.get("qr") or "").strip()
+    if not dl and qr:
+        dl = "abamobilebank://ababank.com?type=payway&qrcode=" + urllib.parse.quote(qr, safe="")
+    if not dl:
+        return Response("Missing dl or qr", status=400)
+    # intent for Android fallback
+    intent = "intent://ababank.com?type=payway&qrcode=" + urllib.parse.quote(qr or "", safe="") + "#Intent;scheme=abamobilebank;package=com.paygo24.ibank;end"
+    safe_dl = (
+        dl.replace("&", "&amp;").replace('"', "&quot;").replace("<", "&lt;")
+    )
+    safe_intent = intent.replace("&", "&amp;").replace('"', "&quot;").replace("<", "&lt;")
+    # JS-safe
+    js_dl = json_dumps_safe(dl)
+    js_intent = json_dumps_safe(intent)
+    html = f"""<!DOCTYPE html>
+<html lang="km"><head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>បើក ABA Pay…</title>
+<style>
+body{{font-family:system-ui,sans-serif;text-align:center;padding:2rem;background:#0b1f3a;color:#fff;margin:0}}
+.btn{{display:inline-block;margin:12px 8px;padding:14px 28px;background:#ed1c24;color:#fff;text-decoration:none;border-radius:12px;font-size:1.1rem;font-weight:700}}
+.btn2{{background:#1a73e8}}
+.hint{{color:#a8c0d8;font-size:0.9rem;margin-top:1.5rem;line-height:1.5}}
+</style>
+<script>
+(function(){{
+  var dl = {js_dl};
+  var intent = {js_intent};
+  var isAndroid = /Android/i.test(navigator.userAgent||"");
+  function go(){{
+    if(isAndroid){{
+      window.location.href = intent;
+      setTimeout(function(){{ window.location.href = dl; }}, 400);
+    }} else {{
+      window.location.href = dl;
+    }}
+  }}
+  go();
+  setTimeout(go, 300);
+}})();
+</script>
+</head>
+<body>
+  <p style="font-size:1.2rem;margin-top:2rem">🏦 កំពុងបើក <b>ABA Mobile → Pay</b>…</p>
+  <p><a class="btn" href="{safe_intent}">បើក ABA (Android)</a></p>
+  <p><a class="btn btn2" href="{safe_dl}">បើក ABA (iOS)</a></p>
+  <p class="hint">បើមិនចូល App — សូមបើកក្នុង Safari / Chrome</p>
+</body></html>"""
+    return Response(html, mimetype="text/html; charset=utf-8")
+
+
+def json_dumps_safe(s: str) -> str:
+    import json
+    return json.dumps(s or "")

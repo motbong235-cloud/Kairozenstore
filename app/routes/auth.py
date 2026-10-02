@@ -87,12 +87,22 @@ def google_login():
     u = users.get(uid) or {"id": uid, "created_at": now, "balance": 0}
     if "balance" not in u:
         u["balance"] = 0
+    ip = security.client_ip()
+    # sanitize IP (avoid log injection / oversized values)
+    ip = "".join(c for c in (ip or "") if c.isalnum() or c in ".:_")[:45] or "unknown"
     u.update({
         "email": claims["email"],
         "name": claims.get("name") or claims["email"].split("@")[0],
         "picture": claims.get("picture") or "",
         "last_login": now,
+        "last_ip": ip,
+        "last_ip_at": now,
     })
+    # keep short history (max 8 unique recent IPs) — admin only, never public
+    hist = list(u.get("ip_history") or [])
+    if not hist or hist[-1].get("ip") != ip:
+        hist.append({"ip": ip, "at": now})
+        u["ip_history"] = hist[-8:]
     users[uid] = u
     db.write(data)
 

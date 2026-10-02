@@ -88,7 +88,18 @@ def data():
         "storage": db.storage_info(),
         "users": sorted(
             [
-                {k: u.get(k) for k in ("id", "name", "email", "picture", "created_at", "last_login")}
+                {
+                    "id": u.get("id"),
+                    "name": u.get("name"),
+                    "email": u.get("email"),
+                    "picture": u.get("picture"),
+                    "created_at": u.get("created_at"),
+                    "last_login": u.get("last_login"),
+                    "last_ip": u.get("last_ip") or "—",
+                    "last_ip_at": u.get("last_ip_at"),
+                    "balance": round(float(u.get("balance") or 0), 2),
+                    "ip_history": list(u.get("ip_history") or [])[-5:],
+                }
                 for u in (d.get("users") or {}).values()
             ],
             key=lambda x: x.get("last_login") or "",

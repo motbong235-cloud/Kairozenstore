@@ -8,6 +8,32 @@ from typing import Any
 from app import database as db
 from app.services import khpay
 
+def notify_telegram(text: str) -> None:
+    """Fire-and-forget admin Telegram message (optional settings)."""
+    try:
+        import json
+        import urllib.request
+        import urllib.parse
+        s = (db.read().get("settings") or {})
+        token = (s.get("TELEGRAM_BOT_TOKEN") or "").strip()
+        chat = (s.get("TELEGRAM_CHAT_ID") or "").strip()
+        if not token or not chat:
+            return
+        url = f"https://api.telegram.org/bot{token}/sendMessage"
+        body = json.dumps({
+            "chat_id": chat,
+            "text": text[:3500],
+            "disable_web_page_preview": True,
+        }).encode("utf-8")
+        req = urllib.request.Request(
+            url, data=body, headers={"Content-Type": "application/json"}, method="POST"
+        )
+        urllib.request.urlopen(req, timeout=8)
+    except Exception:
+        pass
+
+
+
 
 def utc_now() -> str:
     return datetime.now(timezone.utc).isoformat()
@@ -77,6 +103,30 @@ def fulfill(data: dict, order: dict) -> dict:
     order["paid_at"] = utc_now()
     if order.get("product_id"):
         sync_stock(data, order["product_id"])
+    # notify admin (best-effort)
+    try:
+        kind = "TOPUP" if order.get("type") == "topup" else "ORDER"
+        msg = (
+            f"✅ {kind} PAID\n"
+            f"ID: {order.get('id')}\n"
+            f"Product: {order.get('product_name') or '-'}\n"
+            f"Amount: ${float(order.get('price') or 0):.2f}\n"
+            f"User: {order.get('contact') or order.get('user_id') or '-'}\n"
+            f"Status: {order.get('status')}\n"
+            f"Delivery: {(order.get('delivery') or '-')[:200]}"
+        )
+        notify_telegram(msg)
+        # low stock warning
+        if order.get("product_id") and order.get("type") != "topup":
+            stock = (data.get("stock_files") or {}).get(str(order["product_id"])) or []
+            if len(stock) <= 3:
+                notify_telegram(
+                    f"⚠️ LOW STOCK\n{order.get('product_name')}\nเหลือ {len(stock)} บัญชี"
+                    if False else
+                    f"⚠️ LOW STOCK\n{order.get('product_name')}\nនៅសល់ {len(stock)} accounts"
+                )
+    except Exception:
+        pass
     return order
 
 

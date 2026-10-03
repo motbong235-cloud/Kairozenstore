@@ -93,6 +93,7 @@ th{color:var(--muted);font-size:10px;text-transform:uppercase}
     <button class="tab" data-t="products" onclick="tab('products')">Products</button>
     <button class="tab" data-t="stock" onclick="tab('stock')">Stock</button>
     <button class="tab" data-t="users" onclick="tab('users')">Users</button>
+    <button class="tab" data-t="tools" onclick="tab('tools')">Tools</button>
     <button class="tab" data-t="settings" onclick="tab('settings')">Settings</button>
   </div>
 
@@ -121,7 +122,11 @@ th{color:var(--muted);font-size:10px;text-transform:uppercase}
       </div>
       <div class="row2">
         <div class="field"><label>Badge</label><input id="pBadge" placeholder="HOT / VIP"></div>
-        <div class="field"><label>Image (URL or upload)</label><input id="pImg" placeholder="/api/media/..."><input type="file" id="pImgFile" accept="image/*" style="margin-top:6px" onchange="uploadProdImg()"></div>
+        <div class="field"><label>Image (URL or upload)</label>
+        <input id="pImg" placeholder="/api/media/..." oninput="prevProdImg()">
+        <input type="file" id="pImgFile" accept="image/png,image/jpeg,image/webp,image/gif" style="margin-top:6px" onchange="uploadProdImg()">
+        <div id="pImgPrevWrap" style="margin-top:8px;display:none"><img id="pImgPrev" alt="" style="width:80px;height:80px;object-fit:cover;border-radius:12px;border:1px solid var(--line)"></div>
+      </div>
       </div>
       <button class="btn btn-v" type="button" onclick="saveProduct()">Save product</button>
       <button class="btn btn-ghost" type="button" onclick="$('#prodForm').classList.add('hidden')">Cancel</button>
@@ -146,9 +151,45 @@ th{color:var(--muted);font-size:10px;text-transform:uppercase}
     <h3>Google users</h3>
     <p class="help" style="margin-bottom:10px">Last IP កត់ពេល login (X-Forwarded-For លើ Render) · hover IP ដើម្បីមើល history · មិនបង្ហាញជាសាធារណៈ</p>
     <div style="overflow-x:auto"><table>
-      <thead><tr><th>User</th><th>Email</th><th>Balance</th><th>Last IP</th><th>Joined</th><th>Last login</th></tr></thead>
+      <thead><tr><th>User</th><th>Email</th><th>Balance</th><th>Last IP</th><th>Joined</th><th>Last login</th><th></th></tr></thead>
       <tbody id="userRows"></tbody>
     </table></div>
+  </div>
+
+  
+  <div id="t-tools" class="card hidden">
+    <h3>Admin Tools</h3>
+
+    <div class="ks" style="margin-bottom:16px">
+      <h4>ដាក់លុយ / កាត់លុយ User (Wallet)</h4>
+      <div class="row">
+        <div class="field"><label>Email user</label><input id="crEmail" placeholder="user@gmail.com"></div>
+        <div class="field"><label>Amount (USD)</label><input id="crAmt" type="number" step="0.01" placeholder="5.00 · ដាក់ -1 ដើម្បីកាត់"></div>
+      </div>
+      <div class="field"><label>Note (optional)</label><input id="crNote" placeholder="Manual topup / refund"></div>
+      <button class="btn btn-v" type="button" onclick="creditUser()">Apply balance</button>
+      <div class="help">វាយ amount វិជ្ជមាន = បន្ថែម · អវិជ្ជមាន = កាត់ · User ត្រូវ login Google ម្តងរួច</div>
+    </div>
+
+    <div class="ks" style="background:#f8fafc;border-color:var(--line);margin-bottom:16px">
+      <h4 style="color:var(--text)">Manual deliver order</h4>
+      <div class="row">
+        <div class="field"><label>Order ID</label><input id="dlOid" placeholder="KZ-..."></div>
+      </div>
+      <div class="field"><label>Delivery text (account)</label><textarea id="dlText" placeholder="email:password" style="min-height:70px"></textarea></div>
+      <button class="btn btn-g" type="button" onclick="manualDeliver()">Mark paid + Deliver</button>
+      <div class="help">ប្រើពេលបង់ក្រៅ QR ឬផ្តល់ account ដោយដៃ</div>
+    </div>
+
+    <div class="ks" style="background:#eff6ff;border-color:#bfdbfe">
+      <h4>Categories</h4>
+      <div class="row">
+        <div class="field"><label>Name</label><input id="catName" placeholder="Streaming"></div>
+        <div class="field"><label>Slug</label><input id="catSlug" placeholder="streaming"></div>
+      </div>
+      <button class="btn btn-v" type="button" onclick="saveCat()">Save category</button>
+      <div id="catList" style="margin-top:12px;font-size:12px"></div>
+    </div>
   </div>
 
   <div id="t-settings" class="card hidden">
@@ -245,7 +286,7 @@ async function doLogin(){
 async function doLogout(){await api('admin/logout',{method:'POST'});location.reload()}
 function tab(n){
   document.querySelectorAll('.tab').forEach(t=>t.classList.toggle('on',t.dataset.t===n));
-  ['orders','products','stock','users','settings'].forEach(x=>$('#t-'+x)?.classList.toggle('hidden',x!==n));
+  ['orders','products','stock','users','tools','settings'].forEach(x=>$('#t-'+x)?.classList.toggle('hidden',x!==n));
 }
 
 let DATA={};
@@ -255,12 +296,14 @@ async function load(){
   DATA=r;
   const s=r.stats||{};
   $('#stats').innerHTML=`
+    <div class="stat"><div class="l">Users</div><div class="v">${s.users||0}</div></div>
     <div class="stat"><div class="l">Products</div><div class="v">${s.products||0}</div></div>
     <div class="stat"><div class="l">Orders</div><div class="v">${s.orders||0}</div></div>
     <div class="stat"><div class="l">Paid</div><div class="v" style="color:var(--green)">${s.paid||0}</div></div>
     <div class="stat"><div class="l">Pending</div><div class="v" style="color:var(--gold)">${s.pending||0}</div></div>
     <div class="stat"><div class="l">Revenue</div><div class="v" style="color:#1d4ed8">$${(s.revenue||0).toFixed(0)}</div></div>`;
 
+  renderCats(r.categories);
   $('#orderRows').innerHTML=(r.orders||[]).map(o=>{
     const st=o.status==='paid'?'paid':(o.status==='waiting_confirm'?'wait':'pending');
     const label=o.status==='paid'?'PAID':(o.status==='waiting_confirm'?'WAIT':'PENDING');
@@ -293,18 +336,11 @@ async function load(){
   sb.innerHTML = stg.persistent
     ? `<div class="okb">✓ Data រក្សាទុកអចិន្ត្រៃយ៍ (${esc(stg.mode)}) — update website មិនបាត់ data ទេ</div>`
     : `<div class="warn"><b>⚠ Data អាចបាត់ពេល deploy!</b> Server នេះប្រើ disk បណ្តោះអាសន្ន។ សូមដាក់ <code>DATABASE_URL</code> (Postgres) ឬ Persistent Disk + <code>DATA_DIR</code> ក្នុង Render។ ឥឡូវនេះសូម Download backup ជាប្រចាំ។</div>`;
-  $('#userRows').innerHTML=(r.users||[]).map(u=>{
-    const hist=(u.ip_history||[]).map(h=>esc((h.ip||'')+' @ '+String(h.at||'').slice(0,16).replace('T',' '))).join(' · ');
-    const tip=hist?` title="${hist}"`:"";
-    return `<tr>
-      <td>${u.picture?`<img class="ava" src="${esc(u.picture)}" referrerpolicy="no-referrer" alt="">`:''}${esc(u.name||'')}</td>
-      <td>${esc(u.email||'')}</td>
-      <td class="mono">$${Number(u.balance||0).toFixed(2)}</td>
-      <td class="mono" style="font-size:11px;color:var(--blue)"${tip}>${esc(u.last_ip||'—')}</td>
-      <td class="mono" style="font-size:10px">${esc((u.created_at||'').slice(0,10))}</td>
-      <td class="mono" style="font-size:10px">${esc((u.last_login||'').slice(0,16).replace('T',' '))}</td>
-    </tr>`;
-  }).join('')||'<tr><td colspan="6" style="color:var(--muted)">No users yet</td></tr>';
+  USER_LIST = r.users || [];
+  if($('#userCount')) $('#userCount').textContent = '('+USER_LIST.length+')';
+  if($('#userEmpty')) $('#userEmpty').style.display = USER_LIST.length ? 'none' : 'block';
+  renderUserRows(USER_LIST);
+
   const set=r.settings||{};
   $('#s_REQUIRE_LOGIN').checked=!!set.REQUIRE_LOGIN;
   $('#origin').textContent=location.origin;
@@ -314,6 +350,76 @@ async function load(){
   if($('#s_BANNER_IMAGE')?.value) showBannerPrev($('#s_BANNER_IMAGE').value);
   $('#s_ADMIN_PASSWORD').value='';
 }
+
+
+function fillCredit(email){
+  tab('tools');
+  if($('#crEmail')) $('#crEmail').value = email||'';
+  if($('#crAmt')) $('#crAmt').focus();
+}
+async function creditUser(){
+  const email=($('#crEmail')?.value||'').trim();
+  const amount=Number($('#crAmt')?.value||0);
+  const note=($('#crNote')?.value||'').trim();
+  if(!email){toast('បំពេញ email',true);return}
+  if(!amount){toast('បំពេញ amount',true);return}
+  const r=await api('admin/user/credit',{method:'POST',body:JSON.stringify({email,amount,note})});
+  if(r.ok){toast('Balance → $'+Number(r.balance).toFixed(2)); $('#crAmt').value=''; $('#crNote').value=''; load()}
+  else toast(r.error||'Fail',true);
+}
+async function manualDeliver(){
+  const order_id=($('#dlOid')?.value||'').trim();
+  const delivery=($('#dlText')?.value||'').trim();
+  if(!order_id){toast('Order ID required',true);return}
+  const r=await api('admin/order/deliver',{method:'POST',body:JSON.stringify({order_id,delivery})});
+  toast(r.ok?'Delivered ✓':(r.error||'Fail'),!r.ok); if(r.ok) load();
+}
+async function saveCat(){
+  const name=($('#catName')?.value||'').trim();
+  const slug=($('#catSlug')?.value||'').trim();
+  if(!name){toast('Name required',true);return}
+  const r=await api('admin/category',{method:'POST',body:JSON.stringify({name,slug})});
+  toast(r.ok?'Category saved':'Fail',!r.ok);
+  if(r.ok){ $('#catName').value=''; $('#catSlug').value=''; renderCats(r.categories); load(); }
+}
+function renderCats(list){
+  const el=$('#catList'); if(!el) return;
+  el.innerHTML=(list||DATA.categories||[]).map(c=>
+    `<div style="display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid var(--line)">
+      <span><b>${esc(c.name)}</b> <span class="mono" style="color:var(--muted)">${esc(c.slug)}</span></span>
+      <button class="btn btn-r" style="padding:4px 10px;font-size:11px" type="button" onclick="delCat('${esc(c.slug)}')">Delete</button>
+    </div>`
+  ).join('')||'<span style="color:var(--muted)">No categories</span>';
+}
+async function delCat(slug){
+  if(!confirm('Delete category '+slug+'?'))return;
+  const r=await api('admin/category',{method:'DELETE',body:JSON.stringify({slug})});
+  toast(r.ok?'Deleted':'Fail',!r.ok); if(r.ok){renderCats(r.categories);load()}
+}
+
+
+let USER_LIST = [];
+function renderUserRows(list){
+  const q = (($('#userSearch')||{}).value||'').trim().toLowerCase();
+  let rows = list || USER_LIST || [];
+  if(q) rows = rows.filter(u => ((u.email||'')+(u.name||'')+(u.id||'')).toLowerCase().includes(q));
+  const el = $('#userRows');
+  if(!el) return;
+  el.innerHTML = rows.length ? rows.map(u=>{
+    const hist=(u.ip_history||[]).map(h=>esc((h.ip||'')+' @ '+String(h.at||'').slice(0,16).replace('T',' '))).join(' · ');
+    const tip=hist?` title="${hist}"`:"";
+    return `<tr>
+      <td>${u.picture?`<img class="ava" src="${esc(u.picture)}" referrerpolicy="no-referrer" alt="">`:''}${esc(u.name||'')}</td>
+      <td>${esc(u.email||'')}<div class="mono" style="font-size:9px;color:var(--muted)">${esc(u.id||'')}</div></td>
+      <td class="mono">$${Number(u.balance||0).toFixed(2)}</td>
+      <td class="mono" style="font-size:11px;color:var(--blue)"${tip}>${esc(u.last_ip||'—')}</td>
+      <td class="mono" style="font-size:10px">${esc((u.created_at||'').slice(0,10))}</td>
+      <td class="mono" style="font-size:10px">${esc((u.last_login||'').slice(0,16).replace('T',' '))}</td>
+      <td><button class="btn btn-ghost" style="padding:4px 8px;font-size:11px" type="button" onclick="fillCredit('${esc(u.email||'')}')">+$</button></td>
+    </tr>`;
+  }).join('') : '<tr><td colspan="7" style="color:var(--muted)">No users yet</td></tr>';
+}
+function filterUsers(){ renderUserRows(USER_LIST); }
 
 async function confirmOrder(id){
   const r=await api('admin/order/confirm',{method:'POST',body:JSON.stringify({order_id:id})});
@@ -339,11 +445,16 @@ async function saveProduct(){
   toast(r.ok?'Saved':(r.error||'Fail'),!r.ok);
   $('#prodForm').classList.add('hidden'); load();
 }
+function prevProdImg(){
+  const u=($('#pImg')?.value||'').trim(); const w=$('#pImgPrevWrap'), img=$('#pImgPrev');
+  if(!w||!img) return;
+  if(u){ img.src=u; w.style.display='block'; } else w.style.display='none';
+}
 async function uploadProdImg(){
   const f=$('#pImgFile').files[0]; if(!f)return;
   const fd=new FormData(); fd.append('file',f);
   const r=await fetch('/api/admin/upload-image',{method:'POST',body:fd,credentials:'same-origin'}).then(x=>x.json()).catch(()=>({ok:false}));
-  if(r.ok){$('#pImg').value=r.url;toast('Image uploaded ✓')}else toast(r.error||'Fail',true);
+  if(r.ok){$('#pImg').value=r.url;prevProdImg();toast('Image uploaded ✓')}else toast(r.error||'Fail',true);
 }
 async function delProd(id){
   if(!confirm('Delete product '+id+'?'))return;

@@ -374,7 +374,9 @@ def settings():
 
 
 # ───────────── uploads (stored in DB/disk backend, survive deploys) ─────────────
-MAX_IMG = 1_500_000  # 1.5 MB
+MAX_RAW = int(os.environ.get("MAX_UPLOAD_MB", "50")) * 1_000_000   # raw upload limit (default 50 MB)
+MAX_IMG = 1_500_000    # stored size target after auto-compress
+MAX_SIDE = 1600        # longest side in px
 
 
 def _sniff_image(blob: bytes) -> tuple[str, str] | None:
@@ -392,19 +394,60 @@ def _sniff_image(blob: bytes) -> tuple[str, str] | None:
     return None
 
 
+def _shrink(blob: bytes, mime: str, ext: str) -> tuple[bytes, str, str]:
+    """Auto resize/compress big photos so phone images (3-10 MB) upload fine."""
+    if ext in ("gif", "ico") or (len(blob) <= MAX_IMG and ext != "jpg"):
+        return blob, mime, ext
+    try:
+        import io
+        from PIL import Image, ImageOps
+
+        Image.MAX_IMAGE_PIXELS = 400_000_000  # allow very large camera/DSLR photos
+        im = Image.open(io.BytesIO(blob))
+        if ext == "jpg":
+            im.draft("RGB", (MAX_SIDE * 2, MAX_SIDE * 2))  # decode small → low RAM
+        im = ImageOps.exif_transpose(im)  # fix rotated phone photos
+        if max(im.size) > MAX_SIDE or len(blob) > MAX_IMG:
+            im.thumbnail((MAX_SIDE, MAX_SIDE))
+        has_alpha = im.mode in ("RGBA", "LA", "P") and (
+            im.mode != "P" or "transparency" in im.info
+        )
+        out = io.BytesIO()
+        if has_alpha:
+            im.convert("RGBA").save(out, "WEBP", quality=85, method=4)
+            return out.getvalue(), "image/webp", "webp"
+        im = im.convert("RGB")
+        q = 85
+        while True:
+            out = io.BytesIO()
+            im.save(out, "JPEG", quality=q, optimize=True)
+            if out.tell() <= MAX_IMG or q <= 50:
+                break
+            q -= 10
+        return out.getvalue(), "image/jpeg", "jpg"
+    except Exception:
+        return blob, mime, ext
+
+
 def _store_upload(prefix: str):
     f = request.files.get("file")
     if not f:
         return None, (jsonify({"ok": False, "error": "No file"}), 400)
-    blob = f.read(MAX_IMG + 1)
-    if len(blob) > MAX_IMG:
-        return None, (jsonify({"ok": False, "error": "Image too large (max 1.5 MB)"}), 400)
+    blob = f.read(MAX_RAW + 1)
+    if len(blob) > MAX_RAW:
+        return None, (jsonify({"ok": False, "error": "Image too large (max {} MB)".format(MAX_RAW // 1_000_000)}), 400)
     kind = _sniff_image(blob)
     if not kind:
         return None, (jsonify({"ok": False, "error": "Use PNG, JPG, WEBP or GIF"}), 400)
     mime, ext = kind
+    blob, mime, ext = _shrink(blob, mime, ext)
+    if len(blob) > 4_000_000:
+        return None, (jsonify({"ok": False, "error": "Image still too large"}), 400)
     name = f"{prefix}_{secrets.token_hex(6)}.{ext}"
-    db.media_put(name, mime, blob)
+    try:
+        db.media_put(name, mime, blob)
+    except Exception as e:  # DB/disk problem → show a real message instead of "Fail"
+        return None, (jsonify({"ok": False, "error": f"Storage error: {type(e).__name__}"}), 500)
     return name, None
 
 

@@ -25,6 +25,7 @@ def _site() -> dict:
         "logo": f"/site-logo?v={v}",
         "logo_abs": f"{base}/site-logo?v={v}",
         "url": base,
+        "khmer_font": (Path(current_app.static_folder) / "fonts" / "khmer.woff2").is_file(),
         "google_client_id": (s.get("GOOGLE_CLIENT_ID") or os.environ.get("GOOGLE_CLIENT_ID") or "").strip(),
     }
 

@@ -120,3 +120,14 @@ Customers can see "My orders" and their delivered accounts after login. Admin �
 2. Environment → `DATA_DIR` = `/var/data`
 3. Redeploy. `/health` must show `"mode": "disk", "persistent": true, "path": "/var/data"`
 Even if `DATA_DIR` is forgotten, the app auto-uses `/var/data` when the disk is mounted.
+
+
+## Khmer font (ពុម្ពអក្សរខ្មែរ)
+
+All pages load Khmer fonts in 3 layers (see `templates/_fonts.html`):
+1. **Self-hosted** `static/fonts/khmer.woff2` (optional, most reliable — works offline / if Google is blocked)
+2. **Google Fonts**: Kantumruy Pro + Noto Sans Khmer
+3. **System fonts**: Khmer OS, Khmer UI, Leelawadee UI, Nokora…
+
+To self-host: download a Khmer font from fonts.google.com (e.g. *Kantumruy Pro* or *Noto Sans Khmer*),
+convert to `.woff2` and save it as `static/fonts/khmer.woff2`. It is picked up automatically (no code change).

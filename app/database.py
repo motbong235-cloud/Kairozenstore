@@ -138,9 +138,19 @@ def _normalize(data: dict[str, Any]) -> dict[str, Any]:
     data.setdefault("products", [])
     data.setdefault("stock_files", {})
     data.setdefault("orders", [])
-    data.setdefault("users", {})
     data.setdefault("next_order", 1001)
     data.setdefault("next_product", 1)
+    # users MUST be a dict keyed by user id (not a list)
+    u = data.get("users")
+    if not isinstance(u, dict):
+        fixed = {}
+        if isinstance(u, list):
+            for item in u:
+                if isinstance(item, dict) and item.get("id"):
+                    fixed[str(item["id"])] = item
+        data["users"] = fixed
+    else:
+        data.setdefault("users", {})
     s = data.setdefault("settings", {})
     for k, v in _default_settings().items():
         s.setdefault(k, v)

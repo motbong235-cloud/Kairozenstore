@@ -20,6 +20,10 @@ def create_app(config_class=Config) -> Flask:
         instance_relative_config=False,
     )
     app.config.from_object(config_class)
+    # Allow phone-camera photos (server auto-compresses them afterwards)
+    app.config["MAX_CONTENT_LENGTH"] = max(
+        int(app.config.get("MAX_CONTENT_LENGTH") or 0), (int(os.environ.get("MAX_UPLOAD_MB", "50")) + 5) * 1024 * 1024
+    )
 
     from app.routes import admin, api, auth, web
 
@@ -61,9 +65,17 @@ def create_app(config_class=Config) -> Flask:
             abort(404)
 
 
+    @app.errorhandler(413)
+    def err_413(e):
+        from flask import jsonify
+        return jsonify({"ok": False, "error": "File too large (max {} MB)".format(os.environ.get("MAX_UPLOAD_MB", "50"))}), 413
+
     @app.errorhandler(500)
     def err_500(e):
         app.logger.exception("Server error")
+        from flask import request as _rq, jsonify as _js
+        if _rq.path.startswith("/api/"):
+            return _js({"ok": False, "error": "Server error"}), 500
         return "<h1>Server Error</h1><p><a href='/'>Back to store</a></p>", 500
 
     return app

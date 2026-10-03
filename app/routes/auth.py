@@ -81,8 +81,10 @@ def google_login():
         return jsonify({"ok": False, "error": "Google verification failed"}), 401
 
     data = db.read()
+    if not isinstance(data.get("users"), dict):
+        data["users"] = {}
     users = data.setdefault("users", {})
-    uid = "g_" + claims["sub"]
+    uid = "g_" + str(claims["sub"])
     now = order_service.utc_now()
     u = users.get(uid) or {"id": uid, "created_at": now, "balance": 0}
     if "balance" not in u:

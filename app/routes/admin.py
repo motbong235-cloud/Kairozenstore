@@ -229,6 +229,114 @@ def confirm_order():
     return jsonify({"ok": True, "order": order, "message": "Confirmed & delivered"})
 
 
+
+
+@bp.post("/user/credit")
+@admin_required
+def user_credit():
+    """Admin add/subtract wallet balance for a user (by email or id)."""
+    body = request.get_json(force=True, silent=True) or {}
+    email = (body.get("email") or "").strip().lower()
+    uid = (body.get("user_id") or "").strip()
+    try:
+        amount = float(body.get("amount") or 0)
+    except Exception:
+        return jsonify({"ok": False, "error": "Invalid amount"}), 400
+    note = (body.get("note") or "").strip()[:200]
+    if amount == 0:
+        return jsonify({"ok": False, "error": "Amount cannot be 0"}), 400
+    if abs(amount) > 10000:
+        return jsonify({"ok": False, "error": "Amount too large"}), 400
+    d = db.read()
+    users = d.setdefault("users", {})
+    user = None
+    if uid and uid in users:
+        user = users[uid]
+    elif email:
+        for u in users.values():
+            if (u.get("email") or "").lower() == email:
+                user = u
+                break
+    if not user:
+        return jsonify({"ok": False, "error": "User not found"}), 404
+    old = float(user.get("balance") or 0)
+    new = round(old + amount, 2)
+    if new < 0:
+        return jsonify({"ok": False, "error": f"Balance would be negative (now ${old:.2f})"}), 400
+    user["balance"] = new
+    # audit log
+    logs = d.setdefault("admin_logs", [])
+    logs.append({
+        "at": order_service.utc_now(),
+        "action": "credit",
+        "user_id": user.get("id"),
+        "email": user.get("email"),
+        "amount": amount,
+        "balance_before": old,
+        "balance_after": new,
+        "note": note,
+    })
+    d["admin_logs"] = logs[-200:]
+    db.write(d)
+    return jsonify({
+        "ok": True,
+        "user_id": user.get("id"),
+        "email": user.get("email"),
+        "balance": new,
+        "amount": amount,
+    })
+
+
+@bp.route("/category", methods=["POST", "DELETE"])
+@admin_required
+def category():
+    body = request.get_json(force=True, silent=True) or {}
+    d = db.read()
+    cats = d.setdefault("categories", [])
+    if request.method == "DELETE":
+        slug = (body.get("slug") or "").strip()
+        d["categories"] = [c for c in cats if c.get("slug") != slug]
+        db.write(d)
+        return jsonify({"ok": True, "categories": d["categories"]})
+    name = (body.get("name") or "").strip()
+    slug = (body.get("slug") or "").strip().lower().replace(" ", "-")
+    if not name:
+        return jsonify({"ok": False, "error": "Name required"}), 400
+    if not slug:
+        slug = "".join(c if c.isalnum() or c == "-" else "-" for c in name.lower())
+    existing = next((c for c in cats if c.get("slug") == slug), None)
+    if existing:
+        existing["name"] = name
+    else:
+        cats.append({"slug": slug, "name": name})
+    db.write(d)
+    return jsonify({"ok": True, "categories": cats})
+
+
+@bp.post("/order/deliver")
+@admin_required
+def order_deliver():
+    """Manually set delivery text and mark paid (for custom fulfillment)."""
+    body = request.get_json(force=True, silent=True) or {}
+    oid = (body.get("order_id") or "").strip()
+    delivery = (body.get("delivery") or "").strip()
+    d = db.read()
+    order = next((o for o in d.get("orders", []) if o.get("id") == oid), None)
+    if not order:
+        return jsonify({"ok": False, "error": "Not found"}), 404
+    if delivery:
+        order["delivery"] = delivery
+    if order.get("status") != "paid":
+        order_service.fulfill(d, order)
+        if delivery:
+            order["delivery"] = delivery
+    else:
+        if delivery:
+            order["delivery"] = delivery
+    db.write(d)
+    return jsonify({"ok": True, "order": order})
+
+
 @bp.put("/settings")
 @admin_required
 def settings():

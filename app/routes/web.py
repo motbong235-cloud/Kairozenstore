@@ -39,6 +39,12 @@ def profile():
     return render_template("shop/profile.html", site=_site())
 
 
+@bp.get("/product/<int:pid>")
+def product_detail(pid: int):
+    """Shiryu-style product detail page."""
+    return render_template("shop/product.html", site=_site(), product_id=pid)
+
+
 @bp.get(f"/{ADMIN_PATH}")
 def admin_panel():
     """Hidden admin UI — not linked from the storefront."""

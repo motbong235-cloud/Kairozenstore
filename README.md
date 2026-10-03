@@ -1,7 +1,7 @@
 # Kairozen Store
 
 Premium digital accounts shop (CapCut, Netflix, Spotify…)  
-**Auto payment (Khmer System)** · **Auto delivery** · **Admin panel**
+**Auto payment (KHPAY (khpay.site))** · **Auto delivery** · **Admin panel**
 
 Inspired by shops like [shiryupremium.com](https://shiryupremium.com) (Tailwind + Alpine frontend, server-rendered catalog).
 
@@ -22,7 +22,7 @@ kairozen-store/
 │   │   └── admin.py        # admin API
 │   └── services/
 │       ├── order_service.py
-│       └── khmer_system.py
+│       └── khpay.py
 ├── templates/
 │   ├── shop/index.html
 │   └── admin/index.html
@@ -50,7 +50,7 @@ python server.py
 ## Admin setup
 
 1. Stock → product ID → paste accounts (1 line each)
-2. Settings → Khmer System Profile Key
+2. Settings → KHPAY (khpay.site) Profile Key
 3. Customer pays KHQR → account auto-delivered
 
 ## Deploy (Render)

@@ -6,7 +6,6 @@
 <title>{{ site.name }} · Admin</title>
 <meta name="robots" content="noindex,nofollow">
 <link rel="icon" href="{{ site.logo }}">
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@600&display=swap" rel="stylesheet">
 <style>
 
 :root{--bg:#f3f5f9;--panel:#ffffff;--card:#f8fafc;--line:#e2e8f0;--text:#0f172a;--muted:#64748b;--violet:#1d4ed8;--green:#16a34a;--red:#ef4444;--gold:#f59e0b;--font:'Inter',system-ui,sans-serif;--mono:ui-monospace,monospace}
@@ -65,6 +64,7 @@ th{color:var(--muted);font-size:10px;text-transform:uppercase}
 .sw{display:flex;align-items:center;gap:8px}.sw input{width:auto}
 .ava{width:28px;height:28px;border-radius:50%;vertical-align:middle;margin-right:8px}
 </style>
+{% include '_fonts.html' %}
 </head>
 <body>
 <div class="gate" id="gate">
@@ -450,11 +450,22 @@ function prevProdImg(){
   if(!w||!img) return;
   if(u){ img.src=u; w.style.display='block'; } else w.style.display='none';
 }
-async function uploadProdImg(){
-  const f=$('#pImgFile').files[0]; if(!f)return;
+async function postImage(f){
   const fd=new FormData(); fd.append('file',f);
-  const r=await fetch('/api/admin/upload-image',{method:'POST',body:fd,credentials:'same-origin'}).then(x=>x.json()).catch(()=>({ok:false}));
-  if(r.ok){$('#pImg').value=r.url;prevProdImg();toast('Image uploaded ✓')}else toast(r.error||'Fail',true);
+  try{
+    const res=await fetch('/api/admin/upload-image',{method:'POST',body:fd,credentials:'same-origin'});
+    let j=null; try{ j=await res.json(); }catch(_){}
+    if(j) return j;
+    return {ok:false,error:'Server error ('+res.status+')'};
+  }catch(e){ return {ok:false,error:'Network error'}; }
+}
+async function uploadProdImg(){
+  const inp=$('#pImgFile'); const f=inp.files[0]; if(!f)return;
+  toast('កំពុង upload...');
+  const r=await postImage(f);
+  inp.value='';
+  if(r.ok){$('#pImg').value=r.url;prevProdImg();toast('Image uploaded ✓ · ចុច Save product')}
+  else toast((r.error==='Unauthorized'||r.error==='Session expired')?'Session ផុតកំណត់ · សូម login ម្តងទៀត':(r.error||'Upload fail'),true);
 }
 async function delProd(id){
   if(!confirm('Delete product '+id+'?'))return;
@@ -493,12 +504,8 @@ function refreshLogo(v){
 async function uploadBanner(){
   const f = $('#bannerFile')?.files?.[0];
   if(!f){ toast('ជ្រើសរើសរូប banner សិន', true); return; }
-  if(f.size > 1500000){ toast('រូបធំពេក (max 1.5MB)', true); return; }
-  const fd = new FormData();
-  fd.append('file', f);
   toast('កំពុង upload...');
-  const r = await fetch('/api/admin/upload-image', {method:'POST', body:fd, credentials:'same-origin'})
-    .then(x=>x.json()).catch(()=>({ok:false, error:'Network'}));
+  const r = await postImage(f);
   if(!r.ok){ toast(r.error||'Upload fail', true); return; }
   const url = r.url;
   if($('#s_BANNER_IMAGE')) $('#s_BANNER_IMAGE').value = url;

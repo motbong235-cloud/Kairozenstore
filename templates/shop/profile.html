@@ -250,6 +250,25 @@ body{background:
 .quick a,.quick button{transition:transform .15s,box-shadow .15s}
 .quick a:active,.quick button:active{transform:scale(.97)}
 
+
+/* Pchum Ben theme */
+:root{
+  --blue:#b45309 !important;--blue2:#c2410c !important;--blue-soft:#fff7ed !important;--blue-line:#fed7aa !important;
+  --bg:#faf6f1 !important;--saffron:#e87a1e;--gold:#c9a227;
+}
+body{background:radial-gradient(900px 450px at 50% -15%,#ffedd5 0%,transparent 55%),#faf6f1 !important}
+.btn-buy,.btn-primary{background:linear-gradient(135deg,#9a3412,#ea580c)!important;box-shadow:0 6px 18px rgba(194,65,12,.28)!important}
+.top{border-bottom-color:#fed7aa!important}
+
+
+.hero-card{transition:transform .3s,box-shadow .3s}
+.hero-card:hover{transform:translateY(-4px);box-shadow:0 20px 48px rgba(29,78,216,.3)!important}
+.stat,.quick a,.quick button,.vault-item{
+  transition:transform .25s,box-shadow .25s;
+}
+.stat:hover,.quick a:hover,.quick button:hover{transform:translateY(-3px)}
+.vault-item:hover{transform:translateY(-2px);box-shadow:0 8px 20px rgba(15,23,42,.08)}
+
 </style>
 {% include '_fonts.html' %}
 </head>
@@ -801,6 +820,15 @@ async function openLogin(){
 })();
 
 loadMe();
+
+function startHeartbeat(){
+  const ping=()=>{ fetch('/api/auth/heartbeat',{method:'POST',credentials:'same-origin'}).catch(()=>{}); };
+  ping();
+  if(window.__hb) clearInterval(window.__hb);
+  window.__hb=setInterval(ping, 60000);
+}
+startHeartbeat();
+
 </script>
 </body>
 </html>

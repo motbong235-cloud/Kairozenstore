@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="km">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>FAQ · {{ site.name }}</title>
+<meta name="theme-color" content="#1d4ed8">
+<link rel="icon" href="{{ site.logo }}">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&family=Kantumruy+Pro:wght@400;600;700&display=swap" rel="stylesheet">
+<style>
+:root{--blue:#1d4ed8;--bg:#f1f5f9;--text:#0f172a;--muted:#64748b;--line:#e2e8f0;--card:#fff;--font:'Inter','Kantumruy Pro',system-ui,sans-serif}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:var(--font);background:var(--bg);color:var(--text);line-height:1.55;font-size:14px}
+.top{position:sticky;top:0;background:rgba(255,255,255,.92);backdrop-filter:blur(12px);border-bottom:1px solid var(--line);padding:12px 16px;display:flex;align-items:center;gap:10px}
+.top a{color:var(--blue);font-weight:700;text-decoration:none}
+.wrap{max-width:720px;margin:0 auto;padding:20px 16px 60px}
+h1{font-size:24px;font-weight:800;margin-bottom:8px;color:var(--blue)}
+.lead{color:var(--muted);margin-bottom:20px;font-size:13px}
+.item{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:14px 16px;margin-bottom:10px;box-shadow:0 2px 10px rgba(15,23,42,.04)}
+.item h3{font-size:14px;font-weight:800;margin-bottom:6px}
+.item p{font-size:13px;color:var(--muted)}
+.links{display:flex;gap:10px;flex-wrap:wrap;margin-top:20px}
+.links a{padding:10px 14px;border-radius:12px;background:var(--blue);color:#fff;font-weight:700;text-decoration:none;font-size:13px}
+.links a.g{background:#fff;color:var(--blue);border:1px solid var(--line)}
+</style>
+</head>
+<body>
+<header class="top"><a href="/">← {{ site.name }}</a></header>
+<div class="wrap">
+  <h1>FAQ · សំណួរញឹកញាប់</h1>
+  <p class="lead">ព័ត៌មានសំខាន់មុនទិញ premium account</p>
+
+  <div class="item">
+    <h3>1. ទិញរួចបាន account ពេលណា?</h3>
+    <p>បង់ KHQR / Wallet ជោគជ័យ → ប្រព័ន្ធផ្តល់ account ស្វ័យប្រវត្តិ។ មើលក្នុង Profile → Accounts / ប្រវត្តិទិញ។</p>
+  </div>
+  <div class="item">
+    <h3>2. ត្រូវ login Google ទេ?</h3>
+    <p>ត្រូវ។ ដើម្បីរក្សាទុក order, wallet និង account របស់អ្នក។</p>
+  </div>
+  <div class="item">
+    <h3>3. បង់ហើយមិនទាន់បាន account?</h3>
+    <p>រង់ចាំ 1–2 នាទី · refresh Profile។ បើនៅ pending សូមទំនាក់ Admin តាម Telegram ជាមួយ Order ID។</p>
+  </div>
+  <div class="item">
+    <h3>4. Wallet ប្រើយ៉ាងមិច?</h3>
+    <p>Top up តាម KHQR → សមតុល្យចូល wallet → ទិញភ្លាមដោយមិនស្កេន QR ម្ដងទៀត។</p>
+  </div>
+  <div class="item">
+    <h3>5. Warranty / ប្តូរ account?</h3>
+    <p>បើ account ដាច់ភ្លាមៗបន្ទាប់ពីទិញ (ក្នុងគោលការណ៍ហាង) ទំនាក់ Admin ជាមួយ proof។ មិនគ្របដណ្តប់ការប្រើខុស / share ច្រើន device លើសកំណត់។</p>
+  </div>
+  <div class="item">
+    <h3>6. ទូទាត់អ្វីខ្លះ?</h3>
+    <p>KHQR (ABA និងធនាគារភ្ជាប់ Bakong) · Wallet balance ក្នុងហាង។</p>
+  </div>
+
+  <div class="links">
+    <a href="/">ទៅហាង</a>
+    <a class="g" href="/profile">Profile</a>
+    <a class="g" href="/terms">Terms</a>
+  </div>
+</div>
+</body>
+</html>

@@ -17,7 +17,16 @@
 <meta property="og:image" content="{{ site.logo_abs }}">
 <meta property="og:url" content="{{ site.url }}/">
 <meta name="twitter:card" content="summary">
-<script type="application/ld+json">{{ {"@context":"https://schema.org","@type":"Organization","name":site.name,"url":site.url,"logo":site.logo_abs}|tojson }}</script>
+<script type="application/ld+json">{{ {"@context":"https://schema.org","@type":"Organization","name":site.name,"url":site.url,"logo":site.logo_abs}|tojson }}
+function startHeartbeat(){
+  const ping=()=>{ fetch('/api/auth/heartbeat',{method:'POST',credentials:'same-origin'}).catch(()=>{}); };
+  ping();
+  if(window.__hb) clearInterval(window.__hb);
+  window.__hb=setInterval(ping, 60000);
+}
+startHeartbeat();
+
+</script>
 <style>
 :root{
   --blue:#1d4ed8;--blue2:#2563eb;--blue-soft:#eff6ff;--blue-line:#dbeafe;
@@ -154,8 +163,8 @@ a{color:var(--blue2);text-decoration:none}
   aspect-ratio:1;background:linear-gradient(145deg,#f1f5f9,#e0e7ff);
   display:grid;place-items:center;overflow:hidden;position:relative;
 }
-.flash-card .f-img img{width:100%;height:100%;object-fit:cover}
-.flash-card .f-img img.logo{object-fit:contain;padding:14px;background:#fff}
+.flash-card .f-img img{width:100%;height:100%;object-fit:contain;padding:12px;background:linear-gradient(145deg,#fff,#f8fafc)}
+.flash-card .f-img img.logo{object-fit:contain;padding:10px;background:linear-gradient(145deg,#fff,#f8fafc)}
 .flash-card .f-img .ph{font-size:22px;font-weight:800;color:rgba(37,99,235,.28)}
 .flash-card .f-body{padding:10px}
 .flash-card .cat{font-size:9px;font-weight:700;color:var(--faint);text-transform:uppercase;letter-spacing:.04em;margin-bottom:3px}
@@ -181,13 +190,15 @@ a{color:var(--blue2);text-decoration:none}
   display:grid;place-items:center;overflow:hidden;
 }
 .pcard .thumb img{
-  width:100%;height:100%;object-fit:cover;display:block;
+  width:100%;height:100%;object-fit:contain;display:block;
+  padding:12%;
+  background:linear-gradient(145deg,#ffffff 0%,#f1f5f9 100%);
   transition:transform .25s ease;
 }
-.pcard:hover .thumb img{transform:scale(1.04)}
+.pcard:hover .thumb img{transform:scale(1.03)}
 .pcard .thumb img.logo{
-  object-fit:contain;padding:18%;
-  background:radial-gradient(circle at 30% 20%,#fff 0%,#f1f5f9 70%);
+  object-fit:contain;padding:10%;
+  background:linear-gradient(145deg,#ffffff 0%,#f8fafc 100%);
 }
 .pcard .thumb .ph{
   font-size:32px;font-weight:800;color:rgba(37,99,235,.22);letter-spacing:-.04em;
@@ -502,6 +513,410 @@ body{background:
 .toast:not(.hidden){box-shadow:0 8px 28px rgba(0,0,0,.18)}
 .skel{height:auto;aspect-ratio:3/4}
 @media(max-width:360px){.grid{gap:8px;padding-left:10px;padding-right:10px}.pcard .body{padding:10px}}
+
+/* ═══ Pchum Ben (ភ្ជុំបិណ្ឌ) seasonal theme ═══
+   ស = សេចក្ដីគោរព · ស្វាយព្រះសង្ឃ · មាសវត្ត · ធូបទន់
+*/
+:root{
+  --blue:#b45309;
+  --blue2:#c2410c;
+  --blue-soft:#fff7ed;
+  --blue-line:#fed7aa;
+  --bg:#faf6f1;
+  --card:#ffffff;
+  --text:#1c1917;
+  --muted:#78716c;
+  --faint:#a8a29e;
+  --red:#dc2626;
+  --green:#15803d;
+  --green-bg:#dcfce7;
+  --orange:#ea580c;
+  --line:#e7e5e4;
+  --shadow:0 2px 14px rgba(120,53,15,.06);
+  --shadow-lg:0 12px 40px rgba(120,53,15,.12);
+  --saffron:#e87a1e;
+  --saffron-deep:#9a3412;
+  --gold:#c9a227;
+  --gold-soft:#fef9e7;
+  --cream:#faf6f1;
+  --font:'Inter','Kantumruy Pro',system-ui,sans-serif;
+  --r:16px;--safe:env(safe-area-inset-bottom,0px);
+}
+body{
+  background:
+    radial-gradient(1000px 500px at 0% 0%, #ffedd5 0%, transparent 55%),
+    radial-gradient(800px 400px at 100% 5%, #fef3c7 0%, transparent 50%),
+    var(--cream) !important;
+}
+.marquee{
+  background:linear-gradient(90deg,#9a3412,#c2410c 35%,#e87a1e 70%,#9a3412) !important;
+}
+.top{
+  border-bottom:1px solid #fed7aa !important;
+  background:rgba(255,255,255,.94) !important;
+}
+.brand span{
+  background:linear-gradient(135deg,#9a3412,#c2410c 40%,#e87a1e) !important;
+  -webkit-background-clip:text !important;
+  background-clip:text !important;
+  color:transparent !important;
+}
+.btn-login,.btn-buy,.cats button.on{
+  background:linear-gradient(135deg,#9a3412,#c2410c 50%,#ea580c) !important;
+  box-shadow:0 6px 18px rgba(194,65,12,.28) !important;
+}
+.btn-login:hover,.btn-buy:hover{filter:brightness(1.06)}
+.section-head h3{color:#9a3412 !important}
+.section-head h3::before{background:#e87a1e !important}
+.pcard .now,.flash-card .price{
+  background:linear-gradient(135deg,#b91c1c,#ea580c) !important;
+  -webkit-background-clip:text !important;
+  background-clip:text !important;
+  color:transparent !important;
+}
+.bottom button.on{color:#c2410c !important}
+.bottom button.on svg{stroke:#c2410c !important;filter:drop-shadow(0 2px 4px rgba(194,65,12,.25))}
+.icon-btn:hover{background:#fff7ed !important;color:#c2410c !important}
+.cats button.on{
+  border-color:#c2410c !important;
+}
+.promo.img-only{
+  box-shadow:0 12px 36px rgba(154,52,18,.12) !important;
+  border:1px solid rgba(253,186,116,.35) !important;
+}
+/* soft gold rim on cards */
+.pcard,.flash-card{
+  border-color:#f5e6c8 !important;
+}
+.pcard:hover{
+  border-color:#fed7aa !important;
+  box-shadow:0 14px 36px rgba(194,65,12,.12) !important;
+}
+/* festival ribbon strip under marquee */
+.pchum-bar{
+  display:flex;align-items:center;justify-content:center;gap:10px;
+  background:linear-gradient(90deg,#fffbeb,#fef3c7,#fffbeb);
+  border-bottom:1px solid #fde68a;
+  padding:8px 14px;font-size:12px;font-weight:700;color:#9a3412;
+  letter-spacing:.02em;
+}
+.pchum-bar span{opacity:.85;font-weight:600}
+
+
+/* ── 3D UI / motion ── */
+.grid,.flash-row,.rel-row{perspective:1200px}
+.pcard{
+  transform-style:preserve-3d;
+  transition:transform .35s cubic-bezier(.22,1,.36,1),box-shadow .35s ease,border-color .2s;
+  will-change:transform;
+}
+.pcard:hover{
+  transform:translateY(-10px) rotateX(6deg) rotateY(-4deg) scale(1.02);
+  box-shadow:
+    0 20px 40px rgba(15,23,42,.12),
+    0 8px 16px rgba(29,78,216,.1),
+    0 0 0 1px rgba(37,99,235,.08);
+  z-index:2;
+}
+.pcard:active{transform:translateY(-4px) scale(.99)}
+.pcard .thumb{
+  transform:translateZ(20px);
+  box-shadow:inset 0 -1px 0 rgba(15,23,42,.04);
+}
+.pcard .thumb img{
+  transition:transform .45s cubic-bezier(.22,1,.36,1);
+  filter:drop-shadow(0 8px 16px rgba(15,23,42,.12));
+}
+.pcard:hover .thumb img{
+  transform:translateZ(30px) scale(1.06) rotateY(6deg);
+}
+.pcard .body{transform:translateZ(12px)}
+.pcard .btn-buy{
+  transform:translateZ(18px);
+  transition:transform .2s,box-shadow .2s,filter .2s;
+}
+.pcard:hover .btn-buy{
+  transform:translateZ(24px) translateY(-2px);
+  box-shadow:0 10px 24px rgba(29,78,216,.35);
+}
+
+.flash-card{
+  transform-style:preserve-3d;
+  transition:transform .3s cubic-bezier(.22,1,.36,1),box-shadow .3s;
+}
+.flash-card:hover{
+  transform:translateY(-8px) rotateX(5deg) scale(1.03);
+  box-shadow:0 16px 32px rgba(15,23,42,.12);
+}
+.flash-card .f-img img{
+  transition:transform .4s ease;
+  filter:drop-shadow(0 6px 12px rgba(15,23,42,.1));
+}
+.flash-card:hover .f-img img{transform:scale(1.08) translateY(-2px)}
+
+.promo.img-only,.promo{
+  transition:transform .4s ease,box-shadow .4s;
+}
+.promo:hover{
+  transform:translateY(-3px);
+  box-shadow:0 16px 48px rgba(15,23,42,.14);
+}
+
+.cats button{
+  transition:transform .2s,box-shadow .2s,background .2s,color .2s;
+}
+.cats button:hover{transform:translateY(-2px)}
+.cats button.on{transform:translateY(-1px)}
+
+.btn-buy,.btn-login,.btn-primary{
+  position:relative;
+  overflow:hidden;
+  transition:transform .2s,box-shadow .25s,filter .2s;
+}
+.btn-buy:hover,.btn-login:hover{transform:translateY(-2px) scale(1.02)}
+.btn-buy:active,.btn-login:active{transform:scale(.97)}
+.btn-buy::after,.btn-login::after{
+  content:"";position:absolute;inset:0;
+  background:linear-gradient(120deg,transparent 30%,rgba(255,255,255,.25) 50%,transparent 70%);
+  transform:translateX(-120%);
+  transition:transform .5s ease;
+}
+.btn-buy:hover::after,.btn-login:hover::after{transform:translateX(120%)}
+
+.bottom button{
+  transition:transform .2s,color .2s;
+}
+.bottom button:active{transform:scale(.92)}
+.bottom button.on svg{
+  animation:iconPop .45s cubic-bezier(.22,1,.36,1);
+}
+@keyframes iconPop{
+  0%{transform:scale(.85) translateY(2px)}
+  60%{transform:scale(1.12) translateY(-2px)}
+  100%{transform:scale(1) translateY(0)}
+}
+
+.modal{
+  transform-style:preserve-3d;
+  animation:sheet3d .4s cubic-bezier(.22,1,.36,1);
+}
+@keyframes sheet3d{
+  from{opacity:0;transform:translateY(40px) rotateX(8deg) scale(.96)}
+  to{opacity:1;transform:translateY(0) rotateX(0) scale(1)}
+}
+
+.toast{animation:toast3d .35s cubic-bezier(.22,1,.36,1)}
+@keyframes toast3d{
+  from{opacity:0;transform:translate(-50%,-16px) scale(.92)}
+  to{opacity:1;transform:translate(-50%,0) scale(1)}
+}
+
+/* stagger enter */
+@keyframes cardIn{
+  from{opacity:0;transform:translateY(18px) scale(.96)}
+  to{opacity:1;transform:translateY(0) scale(1)}
+}
+.pcard,.flash-card{
+  animation:cardIn .45s cubic-bezier(.22,1,.36,1) both;
+}
+.pcard:nth-child(1){animation-delay:.02s}
+.pcard:nth-child(2){animation-delay:.05s}
+.pcard:nth-child(3){animation-delay:.08s}
+.pcard:nth-child(4){animation-delay:.11s}
+.pcard:nth-child(5){animation-delay:.14s}
+.pcard:nth-child(6){animation-delay:.17s}
+.pcard:nth-child(7){animation-delay:.2s}
+.pcard:nth-child(8){animation-delay:.23s}
+
+@media (prefers-reduced-motion:reduce){
+  .pcard,.flash-card,.promo,.btn-buy,.btn-login,.modal,.toast{animation:none!important;transition:none!important}
+  .pcard:hover,.flash-card:hover{transform:none}
+}
+@media (hover:none){
+  .pcard:hover{transform:none;box-shadow:var(--shadow)}
+  .flash-card:hover{transform:none}
+}
+
+
+/* ── 3D animation layer ── */
+.grid,.flash-row,.rel-row{perspective:1200px}
+.pcard{
+  transform-style:preserve-3d;
+  transition:transform .35s cubic-bezier(.22,1,.36,1),box-shadow .35s ease,border-color .2s;
+  will-change:transform;
+}
+.pcard:hover{
+  transform:translateY(-10px) rotateX(6deg) rotateY(-4deg) scale(1.02);
+  box-shadow:
+    0 20px 40px rgba(15,23,42,.12),
+    0 8px 16px rgba(29,78,216,.1),
+    0 0 0 1px rgba(37,99,235,.12);
+}
+.pcard:active{transform:translateY(-4px) scale(.99)}
+.pcard .thumb{
+  transform:translateZ(20px);
+  transition:transform .35s ease;
+}
+.pcard:hover .thumb{transform:translateZ(36px)}
+.pcard .thumb img{
+  transition:transform .45s cubic-bezier(.22,1,.36,1);
+}
+.pcard:hover .thumb img{transform:scale(1.06) translateZ(10px)}
+.pcard .body{transform:translateZ(12px)}
+.pcard .btn-buy{
+  transition:transform .25s ease,box-shadow .25s,filter .2s;
+}
+.pcard:hover .btn-buy{
+  transform:translateY(-2px);
+  box-shadow:0 10px 24px rgba(29,78,216,.35);
+}
+
+.flash-card{
+  transform-style:preserve-3d;
+  transition:transform .3s cubic-bezier(.22,1,.36,1),box-shadow .3s;
+}
+.flash-card:hover{
+  transform:translateY(-8px) rotateY(-6deg) scale(1.03);
+  box-shadow:0 16px 32px rgba(15,23,42,.14);
+}
+.flash-card .f-img img{transition:transform .4s ease}
+.flash-card:hover .f-img img{transform:scale(1.08)}
+
+.cats button{
+  transition:transform .2s ease,box-shadow .2s,background .2s,border-color .2s,color .2s;
+}
+.cats button:hover{transform:translateY(-2px)}
+.cats button.on{
+  transform:translateY(-1px);
+  box-shadow:0 6px 16px rgba(29,78,216,.35);
+}
+
+.btn-buy,.btn-login,.btn-primary{
+  transition:transform .2s cubic-bezier(.22,1,.36,1),box-shadow .2s,filter .2s;
+}
+.btn-buy:hover:not(:disabled),.btn-login:hover,.btn-primary:hover:not(:disabled){
+  transform:translateY(-3px) scale(1.02);
+}
+.btn-buy:active:not(:disabled),.btn-login:active{transform:translateY(0) scale(.98)}
+
+.icon-btn{
+  transition:transform .25s cubic-bezier(.34,1.56,.64,1),background .15s,color .15s;
+}
+.icon-btn:hover{transform:scale(1.08) rotate(-6deg)}
+.icon-btn:active{transform:scale(.92)}
+
+.promo.img-only,.promo{
+  transition:transform .4s ease,box-shadow .4s;
+}
+.promo:hover{
+  transform:translateY(-4px);
+  box-shadow:0 16px 48px rgba(15,23,42,.16);
+}
+
+/* float in on load */
+@keyframes floatIn{
+  from{opacity:0;transform:translateY(24px) rotateX(8deg)}
+  to{opacity:1;transform:translateY(0) rotateX(0)}
+}
+.pcard,.flash-card{
+  animation:floatIn .5s cubic-bezier(.22,1,.36,1) both;
+}
+.pcard:nth-child(1){animation-delay:.04s}
+.pcard:nth-child(2){animation-delay:.08s}
+.pcard:nth-child(3){animation-delay:.12s}
+.pcard:nth-child(4){animation-delay:.16s}
+.pcard:nth-child(5){animation-delay:.2s}
+.pcard:nth-child(6){animation-delay:.24s}
+.pcard:nth-child(7){animation-delay:.28s}
+.pcard:nth-child(8){animation-delay:.32s}
+
+@keyframes softFloat{
+  0%,100%{transform:translateY(0)}
+  50%{transform:translateY(-6px)}
+}
+.promo.img-only{animation:softFloat 5s ease-in-out infinite}
+
+.modal{
+  transform-style:preserve-3d;
+  animation:modal3d .35s cubic-bezier(.22,1,.36,1);
+}
+@keyframes modal3d{
+  from{opacity:0;transform:translateY(40px) scale(.94) rotateX(8deg)}
+  to{opacity:1;transform:translateY(0) scale(1) rotateX(0)}
+}
+
+.bottom button{
+  transition:transform .2s ease,color .15s;
+}
+.bottom button:hover{transform:translateY(-3px)}
+.bottom button:active{transform:scale(.92)}
+
+@media (prefers-reduced-motion:reduce){
+  .pcard,.flash-card,.promo.img-only{animation:none!important}
+  .pcard:hover,.flash-card:hover{transform:translateY(-4px)}
+}
+@media (hover:none){
+  .pcard:hover{transform:none;box-shadow:var(--shadow)}
+  .flash-card:hover{transform:none}
+}
+
+
+/* ── modal + scroll animations ── */
+.overlay{
+  animation:ovIn .28s ease both;
+}
+@keyframes ovIn{
+  from{opacity:0}
+  to{opacity:1}
+}
+.overlay.closing{animation:ovOut .22s ease both}
+@keyframes ovOut{
+  from{opacity:1}
+  to{opacity:0}
+}
+.modal{
+  animation:modalIn .38s cubic-bezier(.22,1,.36,1) both !important;
+}
+.overlay.closing .modal{animation:modalOut .22s ease both !important}
+@keyframes modalIn{
+  from{opacity:0;transform:translateY(48px) scale(.94)}
+  to{opacity:1;transform:translateY(0) scale(1)}
+}
+@keyframes modalOut{
+  from{opacity:1;transform:translateY(0) scale(1)}
+  to{opacity:0;transform:translateY(28px) scale(.96)}
+}
+@media(min-width:480px){
+  @keyframes modalIn{
+    from{opacity:0;transform:translateY(24px) scale(.92) rotateX(6deg)}
+    to{opacity:1;transform:translateY(0) scale(1) rotateX(0)}
+  }
+}
+
+/* scroll reveal */
+.reveal{
+  opacity:0;
+  transform:translateY(28px);
+  transition:opacity .55s cubic-bezier(.22,1,.36,1),transform .55s cubic-bezier(.22,1,.36,1);
+  will-change:opacity,transform;
+}
+.reveal.in{
+  opacity:1;
+  transform:translateY(0);
+}
+.reveal-left{transform:translateX(-24px)}
+.reveal-left.in{transform:translateX(0)}
+.reveal-scale{transform:scale(.92)}
+.reveal-scale.in{transform:scale(1)}
+.section.reveal .section-head{transition-delay:.05s}
+.pcard.reveal{transition-delay:calc(var(--i,0) * 50ms)}
+.flash-card.reveal{transition-delay:calc(var(--i,0) * 40ms)}
+
+@media (prefers-reduced-motion:reduce){
+  .reveal{opacity:1;transform:none;transition:none}
+  .overlay,.modal{animation:none!important}
+}
+
 </style>
 {% include '_fonts.html' %}
 </head>
@@ -512,7 +927,8 @@ body{background:
   <div class="bar"><i></i></div>
 </div>
 
-<div class="marquee"><span id="marqueeText">Premium Digital Services · CapCut Pro · Netflix · YouTube Premium · Spotify · Instant delivery · KHQR Auto Pay  ·  </span></div>
+<div class="marquee"><span id="marqueeText">ភ្ជុំបិណ្ឌ · Kairozen Store · Premium accounts · Instant delivery · KHQR  ·  </span></div>
+<div class="pchum-bar">ភ្ជុំបិណ្ឌ · សូមជូនពរ <span>សុខសប្បាយ · សេចក្ដីសុខ</span></div>
 
 <header class="top">
   <a class="brand" href="/" aria-label="{{ site.name }}">
@@ -549,7 +965,7 @@ body{background:
 </div>
 <div class="cats" id="cats" role="tablist" aria-label="ប្រភេទផលិតផល"></div>
 
-<section class="section">
+<section class="section reveal">
   <div class="section-head">
     <h3>Flash Sale</h3>
     <span class="count" id="flashCount">0 items</span>
@@ -557,7 +973,7 @@ body{background:
   <div class="flash-row" id="flashRow"></div>
 </section>
 
-<section class="section">
+<section class="section reveal">
   <div class="section-head">
     <h3>Popular Products</h3>
     <div class="section-tools">
@@ -572,7 +988,7 @@ body{background:
   </div>
 </section>
 <div class="grid" id="grid"><div class="skel"></div><div class="skel"></div><div class="skel"></div><div class="skel"></div></div>
-<footer class="foot">© {{ site.name }} · Secure KHQR payment</footer>
+<footer class="foot">© {{ site.name }} · Secure KHQR · <a href="/faq">FAQ</a> · <a href="/terms">Terms</a></footer>
 
 <nav class="bottom">
   <button type="button" class="on" onclick="window.scrollTo({top:0,behavior:'smooth'})">
@@ -674,6 +1090,7 @@ async function load(){
   renderCats();
   renderFlash();
   renderProducts();
+  bindReveal();
 }
 
 function renderCats(){
@@ -709,18 +1126,17 @@ function productImg(p, cls){
   const src = (p.image||p.img||p.photo||'').trim();
   const letter = esc((p.name||'?').slice(0,2).toUpperCase());
   if(!src) return `<div class="ph">${letter}</div>`;
-  // logo-like images (png with transparency / square icons) use contain
-  const isLogo = /\.(png|webp|svg)(\?|$)/i.test(src) || src.indexOf('/api/media/')===0;
-  const c = isLogo ? (cls?cls+' logo':'logo') : (cls||'');
+  // Digital products = app icons / logos → always show FULL image (object-fit:contain)
+  const c = (cls ? cls + ' ' : '') + 'logo';
   return `<img src="${esc(src)}" alt="${esc(p.name||'')}" class="${c}" loading="lazy" decoding="async" onerror="this.onerror=null;this.className='';this.style.display='none';this.parentNode.insertAdjacentHTML('beforeend','<div class=ph>${letter}</div>')">`;
 }
 
 function renderFlash(){
   const list = filtered().filter(p=>p.badge || Number(p.stock||0)>0).slice(0,12);
   $('#flashCount').textContent = list.length+' items';
-  $('#flashRow').innerHTML = list.map(p=>{
+  $('#flashRow').innerHTML = list.map((p,idx)=>{
     const o = oldPrice(p);
-    return `<div class="flash-card" onclick="location.href='/product/${p.id}'">
+    return `<div class="flash-card reveal" style="--i:${idx}" onclick="location.href='/product/${p.id}'">
       <div class="f-img">${productImg(p)}</div>
       <div class="f-body">
         <div class="cat">${esc(CAT_LABEL[p.cat]||p.cat||'')}</div>
@@ -729,17 +1145,18 @@ function renderFlash(){
       </div>
     </div>`;
   }).join('') || '<div style="color:var(--muted);padding:12px">No flash items</div>';
+  bindReveal();
 }
 
 function renderProducts(){
   const list = filtered();
   $('#prodCount').textContent = list.length+' items';
-  $('#grid').innerHTML = list.length ? list.map(p=>{
+  $('#grid').innerHTML = list.length ? list.map((p,idx)=>{
     const stock = Number(p.stock||0);
     const o = oldPrice(p);
     const off = offPct(p);
     const dur = (p.duration||'').trim();
-    return `<article class="pcard${stock<=0?' soldout':''}" tabindex="0" role="link" aria-label="${esc(p.name)}" onkeydown="if(event.key==='Enter')location.href='/product/${p.id}'" onclick="if(event.target.closest('button'))return;location.href='/product/${p.id}'">
+    return `<article class="pcard reveal${stock<=0?' soldout':''}" style="--i:${idx}" tabindex="0" role="link" aria-label="${esc(p.name)}" onkeydown="if(event.key==='Enter')location.href='/product/${p.id}'" onclick="if(event.target.closest('button'))return;location.href='/product/${p.id}'">
       <div class="thumb">
         ${p.badge?`<span class="b-hot">${esc(p.badge)}</span>`:''}
         ${off?`<span class="b-off">-${off}%</span>`:''}
@@ -763,9 +1180,55 @@ function renderProducts(){
       </div>
     </article>`;
   }).join('') : `<div class="empty"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/></svg><b>${QRY?'រកមិនឃើញ "'+esc(QRY)+'"':'មិនមានផលិតផលក្នុងប្រភេទនេះ'}</b><span>សាកល្បងពាក្យផ្សេង ឬមើលផលិតផលទាំងអស់</span><button type="button" class="btn-reset" onclick="resetFilters()">មើលផលិតផលទាំងអស់</button></div>`;
+  bindReveal();
 }
 
-function closeModal(){ if(POLL) clearInterval(POLL); document.querySelector('.overlay')?.remove(); }
+
+/* 3D tilt on product cards (desktop) */
+function bindCardTilt(){
+  if(window.matchMedia('(hover:none)').matches) return;
+  document.querySelectorAll('.pcard').forEach(card=>{
+    if(card.dataset.tilt) return;
+    card.dataset.tilt='1';
+    card.addEventListener('mousemove',e=>{
+      const r=card.getBoundingClientRect();
+      const x=(e.clientX-r.left)/r.width-.5;
+      const y=(e.clientY-r.top)/r.height-.5;
+      card.style.transform=`translateY(-10px) rotateX(${(-y*10).toFixed(2)}deg) rotateY(${(x*12).toFixed(2)}deg) scale(1.02)`;
+    });
+    card.addEventListener('mouseleave',()=>{ card.style.transform=''; });
+  });
+}
+
+
+function bindReveal(){
+  const els = document.querySelectorAll('.reveal:not(.in)');
+  if(!els.length) return;
+  if(!('IntersectionObserver' in window)){
+    els.forEach(el=>el.classList.add('in'));
+    return;
+  }
+  if(!window.__revealObs){
+    window.__revealObs = new IntersectionObserver((entries)=>{
+      entries.forEach(en=>{
+        if(en.isIntersecting){
+          en.target.classList.add('in');
+          window.__revealObs.unobserve(en.target);
+        }
+      });
+    },{threshold:0.12, rootMargin:'0px 0px -40px 0px'});
+  }
+  els.forEach(el=>window.__revealObs.observe(el));
+}
+
+function closeModal(){
+  if(POLL){ clearInterval(POLL); POLL=null; }
+  const ov = document.querySelector('.overlay');
+  if(!ov) return;
+  if(ov.classList.contains('closing')) return;
+  ov.classList.add('closing');
+  setTimeout(()=>ov.remove(), 220);
+}
 
 
 

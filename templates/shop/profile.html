@@ -35,7 +35,7 @@ a{color:var(--blue2);text-decoration:none}
 .marquee span{display:inline-block;padding-left:100%;animation:mq 22s linear infinite}
 @keyframes mq{0%{transform:translateX(0)}100%{transform:translateX(-100%)}}
 
-.top{position:sticky;top:0;z-index:40;background:#fff;border-bottom:2px solid var(--blue);display:flex;align-items:center;gap:8px;padding:10px 14px}
+.top{position:sticky;top:0;z-index:40;background:rgba(255,255,255,.92);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);border-bottom:1px solid var(--line);display:flex;align-items:center;gap:8px;padding:10px 14px}
 .brand{display:flex;align-items:center;gap:8px;font-weight:800;font-size:15px;color:var(--blue);text-decoration:none;min-width:0}
 .brand img{width:36px;height:36px;border-radius:10px;object-fit:cover;flex-shrink:0}
 .brand span{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:42vw}
@@ -207,6 +207,50 @@ a{color:var(--blue2);text-decoration:none}
   font-size:12px;padding:8px 14px;border-radius:10px;text-decoration:none
 }
 
+
+.vault{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:14px;margin:14px 0;box-shadow:var(--shadow)}
+.vault h3{font-size:13px;font-weight:800;margin-bottom:8px;display:flex;align-items:center;justify-content:space-between}
+.vault h3 span{font-size:11px;font-weight:600;color:var(--muted)}
+.vault-item{border:1px solid var(--line);border-radius:12px;padding:10px;margin-bottom:8px;background:#f8fafc}
+.vault-item:last-child{margin-bottom:0}
+.vault-item .vn{font-size:13px;font-weight:700;color:var(--blue)}
+.vault-item .vd{font-family:ui-monospace,monospace;font-size:11px;margin:6px 0;word-break:break-all;line-height:1.45;color:var(--text)}
+.vault-item .va{display:flex;gap:6px;flex-wrap:wrap}
+.vault-item .va button{font-size:11px;font-weight:700;padding:6px 10px;border-radius:8px;background:var(--green-bg);color:var(--green)}
+.pending-bar{
+  background:#fff7ed;border:1px solid #fed7aa;color:#9a3412;
+  border-radius:12px;padding:10px 12px;margin:12px 0;font-size:12px;font-weight:600;
+  display:none;align-items:center;justify-content:space-between;gap:8px;
+}
+.pending-bar.show{display:flex}
+.pending-bar button{background:#ea580c;color:#fff;border:none;border-radius:8px;padding:6px 10px;font-weight:700;font-size:11px}
+.uid-row{display:flex;align-items:center;gap:8px;margin-top:6px;flex-wrap:wrap}
+.uid-row code{font-size:10px;background:#f1f5f9;padding:4px 8px;border-radius:6px;color:var(--muted)}
+.uid-row button{font-size:10px;font-weight:700;color:var(--blue);padding:4px 8px;border-radius:6px;background:var(--blue-soft)}
+.share-row{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:12px 0}
+.share-row button{
+  display:flex;align-items:center;justify-content:center;gap:6px;
+  padding:12px;border-radius:12px;border:1px solid var(--line);background:#fff;
+  font-size:12px;font-weight:700;box-shadow:var(--shadow)
+}
+.share-row svg{width:16px;height:16px;stroke:var(--blue);fill:none;stroke-width:2}
+.refresh-bal{font-size:11px;font-weight:700;color:var(--blue);margin-left:8px;background:none;border:none;cursor:pointer}
+
+
+body{background:
+  radial-gradient(1000px 500px at 0% 0%, #dbeafe 0%, transparent 50%),
+  radial-gradient(800px 400px at 100% 10%, #e0e7ff 0%, transparent 45%),
+  var(--bg,#f1f5f9);
+}
+.hero-card{
+  background:linear-gradient(145deg,#1e3a8a 0%,#1d4ed8 45%,#3b82f6 100%)!important;
+  box-shadow:0 16px 40px rgba(29,78,216,.25)!important;
+}
+.stat{transition:transform .15s}
+.stat:hover{transform:translateY(-2px)}
+.quick a,.quick button{transition:transform .15s,box-shadow .15s}
+.quick a:active,.quick button:active{transform:scale(.97)}
+
 </style>
 </head>
 <body>
@@ -216,7 +260,7 @@ a{color:var(--blue2);text-decoration:none}
   <div class="bar"><i></i></div>
 </div>
 
-<div class="marquee"><span id="mq">🔥 {{ site.name }} · Profile · Wallet · Order history · Instant delivery  ·  🔥 {{ site.name }} · Profile · Wallet  ·  </span></div>
+<div class="marquee"><span id="mq">{{ site.name }} · Profile · Wallet · Order history · Instant delivery  ·  {{ site.name }} · Profile · Wallet  ·  </span></div>
 
 <header class="top">
   <a class="brand" href="/" aria-label="{{ site.name }}">
@@ -246,10 +290,14 @@ a{color:var(--blue2);text-decoration:none}
           <h1 id="uname">—</h1>
           <div class="em" id="uemail">—</div>
           <div class="member" id="umember"></div>
+          <div class="uid-row" id="uidRow" style="display:none">
+            <code id="uidCode"></code>
+            <button type="button" onclick="copyUid()">Copy ID</button>
+          </div>
         </div>
       </div>
       <div class="bal">
-        <div class="l">WALLET BALANCE</div>
+        <div class="l">WALLET BALANCE <button type="button" class="refresh-bal" onclick="refreshBal()">Refresh</button></div>
         <div class="v" id="ubal">$0.00</div>
         <div class="acts">
           <button type="button" class="solid" onclick="openTopup()">+ Top up</button>
@@ -258,6 +306,10 @@ a{color:var(--blue2);text-decoration:none}
       </div>
     </div>
 
+    <div class="pending-bar" id="pendingBar">
+      <span id="pendingTxt">មាន order រង់ចាំបង់លុយ</span>
+      <button type="button" onclick="setFilter('pending');scrollOrders()">មើល</button>
+    </div>
     <div class="quick">
       <button type="button" onclick="openTopup()">
         <svg viewBox="0 0 24 24"><path d="M12 1v22M17 5H9.5a3.5 3.5 0 000 7h5a3.5 3.5 0 010 7H6"/></svg>
@@ -285,7 +337,7 @@ a{color:var(--blue2);text-decoration:none}
     </div>
 
     <div class="tips">
-      <h3>💡 របៀបប្រើ</h3>
+      <h3><svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4M12 8h.01"/></svg> របៀបប្រើ</h3>
       <ul>
         <li>ដាក់លុយ Wallet → ទិញ product បានភ្លាម (មិនបាច់ QR រាល់ដង)</li>
         <li>បន្ទាប់ពីបង់លុយ — account នឹងបង្ហាញក្នុងប្រវត្តិ · អាច Copy បាន</li>
@@ -306,6 +358,22 @@ a{color:var(--blue2);text-decoration:none}
     </div>
     <div id="orders"><div class="empty">Loading...</div></div>
 
+    <div class="vault" id="vaultBox">
+      <h3>Accounts របស់ខ្ញុំ <span id="vaultCount">0</span></h3>
+      <div id="vaultList"><div class="empty" style="padding:12px;font-size:12px;color:var(--muted)">គណនីដែលទិញរួចនឹងបង្ហាញនៅទីនេះ</div></div>
+    </div>
+
+    <div class="share-row">
+      <button type="button" onclick="shareStore()">
+        <svg viewBox="0 0 24 24"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><path d="M8.6 13.5l6.8 3.4M15.4 7.1l-6.8 3.4"/></svg>
+        Share Store
+      </button>
+      <button type="button" onclick="copyStoreLink()">
+        <svg viewBox="0 0 24 24"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/></svg>
+        Copy Link
+      </button>
+    </div>
+
     <div class="support-card">
       <h3>ត្រូវការជំនួយ?</h3>
       <p>មានបញ្ហា order / ដាក់លុយ — ទំនាក់ទំនង Admin</p>
@@ -316,15 +384,19 @@ a{color:var(--blue2);text-decoration:none}
 
 <nav class="bottom">
   <a href="/">
-    <svg viewBox="0 0 24 24"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/><path d="M9 22V12h6v10"/></svg>
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 10.5L12 3l9 7.5"/><path d="M5 9.5V20a1 1 0 001 1h4v-6h4v6h4a1 1 0 001-1V9.5"/></svg>
     Home
   </a>
   <a href="/">
-    <svg viewBox="0 0 24 24"><path d="M6 2L3 6v14a2 2 0 002 2h14a2 2 0 002-2V6l-3-4z"/><path d="M3 6h18"/><path d="M16 10a4 4 0 01-8 0"/></svg>
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 8h12l1 12H5L6 8z"/><path d="M9 8V7a3 3 0 016 0v1"/></svg>
     Shop
   </a>
-  <a class="on" href="/profile">
-    <svg viewBox="0 0 24 24"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+  <a href="/profile">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="6" width="20" height="14" rx="2"/><path d="M2 10h20"/><path d="M16 14h2"/></svg>
+    Wallet
+  </a>
+  <a href="/profile" class="on">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
     Profile
   </a>
 </nav>
@@ -369,6 +441,10 @@ function showUser(u){
   $('#panel').classList.remove('hidden');
   $('#uname').textContent = u.name || 'User';
   if($('#umember')){ $('#umember').textContent = (USER&&USER.created_at) ? ('Member since '+new Date(USER.created_at).toLocaleDateString()) : ''; }
+  const ur=$('#uidRow'), uc=$('#uidCode');
+  if(ur&&uc&&USER&&USER.id){ uc.textContent = USER.id; ur.style.display='flex'; }
+  else if(ur) ur.style.display='none';
+
   $('#uemail').textContent = u.email || '';
   $('#ubal').textContent = money(u.balance);
   if(u.picture){
@@ -384,7 +460,7 @@ async function loadMe(){
   const cat = await api('catalog');
   GCID = cat.settings?.GOOGLE_CLIENT_ID || '';
   const s = cat.settings || {};
-  if(s.MARQUEE_TEXT && $('#mq')) $('#mq').textContent = '🔥 '+s.MARQUEE_TEXT+'  ·  🔥 '+s.MARQUEE_TEXT+'  ·  ';
+  if(s.MARQUEE_TEXT && $('#mq')) $('#mq').textContent = (s.MARQUEE_TEXT||'').replace(/[🔥✨⭐️⭐🌟]/g,'').trim()+'  ·  ';
   const r = await api('auth/me');
   showUser(r.user || null);
 }
@@ -406,6 +482,60 @@ async function loadSupport(){
   }catch(e){}
 }
 
+
+function renderVault(list){
+  const el = $('#vaultList'), cnt = $('#vaultCount');
+  const paid = (list||[]).filter(o=>o.status==='paid' && o.delivery && o.type!=='topup');
+  if(cnt) cnt.textContent = paid.length + ' accounts';
+  if(!el) return;
+  if(!paid.length){
+    el.innerHTML = '<div style="padding:8px;font-size:12px;color:var(--muted)">មិនទាន់មាន account · <a href="/">ទៅហាង</a></div>';
+    return;
+  }
+  el.innerHTML = paid.slice(0,20).map(o=>`
+    <div class="vault-item">
+      <div class="vn">${esc(o.product_name||'Account')}</div>
+      <div class="vd">${esc(o.delivery)}</div>
+      <div class="va">
+        <button type="button" onclick="copyText(${JSON.stringify(String(o.delivery))})">Copy</button>
+        <button type="button" style="background:#eff6ff;color:var(--blue)" onclick="copyText(${JSON.stringify(String(o.product_name||'')+'\\n'+String(o.delivery))})">Copy all</button>
+      </div>
+    </div>`).join('');
+}
+
+function updatePending(list){
+  const bar = $('#pendingBar'), txt = $('#pendingTxt');
+  const n = (list||[]).filter(o=>o.status!=='paid').length;
+  if(!bar) return;
+  if(n>0){
+    bar.classList.add('show');
+    if(txt) txt.textContent = 'មាន '+n+' order រង់ចាំបង់លុយ / ផ្ទៀងផ្ទាត់';
+  } else bar.classList.remove('show');
+}
+
+async function refreshBal(){
+  toast('Refreshing...');
+  await loadMe();
+  toast('Updated');
+}
+
+function copyUid(){
+  const id = USER && USER.id;
+  if(id) copyText(id);
+}
+
+function shareStore(){
+  const url = location.origin + '/';
+  const title = document.title || 'Kairozen Store';
+  if(navigator.share){
+    navigator.share({title, url, text: title}).catch(()=>copyText(url));
+  } else copyText(url);
+}
+function copyStoreLink(){
+  copyText(location.origin + '/');
+}
+
+
 async function loadOrders(){
   const r = await api('auth/orders');
   const el = $('#orders');
@@ -419,6 +549,8 @@ async function loadOrders(){
   $('#stPaid').textContent = paid.length;
   $('#stSpent').textContent = '$'+spent.toFixed(0);
   if($('#stTopup')) $('#stTopup').textContent = topups.length;
+  renderVault(ORDERS_CACHE);
+  updatePending(ORDERS_CACHE);
   renderOrders();
 }
 
@@ -438,12 +570,12 @@ function scrollOrders(){
 function copyText(txt){
   if(!txt) return;
   if(navigator.clipboard && navigator.clipboard.writeText){
-    navigator.clipboard.writeText(txt).then(()=>toast('Copied ✓')).catch(()=>fallbackCopy(txt));
+    navigator.clipboard.writeText(txt).then(()=>toast('Copied')).catch(()=>fallbackCopy(txt));
   } else fallbackCopy(txt);
 }
 function fallbackCopy(txt){
   const ta=document.createElement('textarea'); ta.value=txt; document.body.appendChild(ta); ta.select();
-  try{ document.execCommand('copy'); toast('Copied ✓'); }catch(e){ toast('Copy failed', true); }
+  try{ document.execCommand('copy'); toast('Copied'); }catch(e){ toast('Copy failed', true); }
   ta.remove();
 }
 
@@ -555,11 +687,11 @@ function payActionsHtml(pay, orderId){
   const aba = abaOpenHref(pay);
   let h = '';
   if(aba){
-    h += `<a class="btn btn-primary" href="${aba}" target="_blank" rel="noopener" style="display:block;text-align:center;text-decoration:none;margin-top:10px;background:#ed1c24;border:none;color:#fff;padding:13px;border-radius:12px;font-weight:800">🏦 បើក ABA Mobile</a>`;
+    h += `<a class="btn btn-primary" href="${aba}" target="_blank" rel="noopener" style="display:block;text-align:center;text-decoration:none;margin-top:10px;background:#ed1c24;border:none;color:#fff;padding:13px;border-radius:12px;font-weight:800"><svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 21h18M3 10h18M5 6l7-3 7 3M4 10v11M20 10v11M8 14v3M12 14v3M16 14v3"/></svg> បើក ABA Mobile</a>`;
   } else if(pay && (pay.PAYMENT_QR||pay.KS_DYNAMIC)){
     h += `<div style="font-size:11px;color:var(--muted);margin:8px 0">ស្កេន QR ក្នុង ABA / ACLEDA / Wing</div>`;
   }
-  h += `<button class="btn btn-primary" style="width:100%;margin-top:8px" type="button" id="btnPaid" onclick="confirmTop('${orderId}')">I have paid</button>`;
+  // auto-detect via webhook / polling — no manual "I have paid"
   return h;
 }
 
@@ -598,7 +730,7 @@ function startPoll(oid){
       clearInterval(POLL);
       if(typeof r.balance==='number'){ USER.balance=r.balance; $('#ubal').textContent=money(r.balance); }
       else await loadMe();
-      toast('Top-up success ✓'); closeModal(); loadOrders();
+      toast('Top-up success'); closeModal(); loadOrders();
     }
   },4000);
 }
@@ -642,9 +774,9 @@ async function openLogin(){
     <h3>ចូលគណនី</h3>
     <div class="sub">Google Sign-In · សុវត្ថិភាព</div>
     <ul class="perks">
-      <li><i>✓</i>មើល balance &amp; ប្រវត្តិទិញ</li>
-      <li><i>✓</i>Top up &amp; ទិញភ្លាម</li>
-      <li><i>🔒</i>មិនឃើញពាក្យសម្ងាត់ Google</li>
+      <li><span class="ico-wrap"><svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M20 6L9 17l-5-5"/></svg></span><span>មើល balance &amp; ប្រវត្តិទិញ</span></li>
+      <li><span class="ico-wrap"><svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg></span><span>Top up &amp; ទិញភ្លាម</span></li>
+      <li><span class="ico-wrap"><svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0110 0v4"/></svg></span><span>មិនឃើញពាក្យសម្ងាត់ Google</span></li>
     </ul>
     <div class="gbox" id="gbox">${GCID?'':'<span style="color:var(--red);font-size:12px">Admin ត្រូវដាក់ Google Client ID</span>'}</div>
     <div class="actions"><button class="btn btn-ghost" type="button" onclick="closeModal()">បិទ</button></div>

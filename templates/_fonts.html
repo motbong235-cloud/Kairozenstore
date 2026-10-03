@@ -1,0 +1,23 @@
+{# Khmer-ready fonts — included at the end of <head> on every page #}
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Kantumruy+Pro:wght@400;500;600;700&family=Noto+Sans+Khmer:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+{% if site.khmer_font %}
+/* Self-hosted Khmer font (static/fonts/khmer.woff2) — works even if Google Fonts is blocked */
+@font-face{font-family:'KZ Khmer';src:url('/static/fonts/khmer.woff2') format('woff2');font-weight:100 900;font-style:normal;font-display:swap;unicode-range:U+1780-17FF,U+19E0-19FF,U+200B-200D}
+{% endif %}
+:root{
+  --font:'Inter',{% if site.khmer_font %}'KZ Khmer',{% endif %}'Kantumruy Pro','Noto Sans Khmer','Khmer OS Battambang','Khmer OS','Khmer UI','Leelawadee UI','Nokora','Battambang',system-ui,-apple-system,'Segoe UI',sans-serif;
+  --mono:ui-monospace,{% if site.khmer_font %}'KZ Khmer',{% endif %}'Noto Sans Khmer','Kantumruy Pro','Khmer OS Battambang','Khmer UI','Leelawadee UI',monospace;
+}
+/* Khmer has tall marks above/below the line → needs more line-height or text gets clipped */
+body{line-height:1.65}
+select{font-family:inherit}
+.brand span{line-height:1.5}
+.pcard h4{line-height:1.6;min-height:3.2em}
+.pcard .desc{line-height:1.6}
+.flash-card .name{line-height:1.6;min-height:3.2em}
+.modal h3,.section-head h3{line-height:1.5}
+.btn-buy,.cats button,.btn-login{line-height:1.5}
+</style>

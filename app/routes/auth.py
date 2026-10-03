@@ -130,3 +130,78 @@ def my_orders():
     if not u:
         return jsonify({"ok": False, "error": "Login required"}), 401
     return jsonify({"ok": True, "orders": order_service.orders_for_user(u["id"])})
+
+
+ONLINE_WINDOW_SEC = 180  # 3 minutes
+
+
+@bp.post("/heartbeat")
+def heartbeat():
+    """Client ping while browsing — marks IP (and logged-in user) as online."""
+    if not security.rate_limit("heartbeat", limit=6, window_sec=60):
+        return jsonify({"ok": True, "throttled": True})
+    ip = security.client_ip()
+    ip = "".join(c for c in (ip or "") if c.isalnum() or c in ".:_")[:45] or "unknown"
+    now = order_service.utc_now()
+    data = db.read()
+    presence = data.setdefault("presence", {})
+    # prune old presence (> 15 min)
+    try:
+        from datetime import datetime, timezone, timedelta
+        cut = datetime.now(timezone.utc) - timedelta(minutes=15)
+        pruned = {}
+        for k, v in presence.items():
+            at = (v or {}).get("at") or ""
+            try:
+                ts = datetime.fromisoformat(at.replace("Z", "+00:00"))
+                if ts.tzinfo is None:
+                    ts = ts.replace(tzinfo=timezone.utc)
+                if ts >= cut:
+                    pruned[k] = v
+            except Exception:
+                pass
+        presence = pruned
+        data["presence"] = presence
+    except Exception:
+        pass
+    entry = {"at": now, "ip": ip}
+    uid = session.get("user_id")
+    if uid:
+        users = data.setdefault("users", {})
+        if not isinstance(users, dict):
+            users = {}
+            data["users"] = users
+        u = users.get(uid)
+        if u:
+            u["last_seen"] = now
+            u["last_ip"] = ip
+            u["last_ip_at"] = now
+            entry["user_id"] = uid
+            entry["email"] = u.get("email") or ""
+            users[uid] = u
+    presence[ip] = entry
+    data["presence"] = presence
+    db.write(data)
+    return jsonify({"ok": True, "at": now})
+
+
+@bp.get("/online-count")
+def online_count():
+    """Public-ish count for admin; still requires no secret — admin uses /data."""
+    data = db.read()
+    presence = data.get("presence") or {}
+    n = 0
+    from datetime import datetime, timezone, timedelta
+    cut = datetime.now(timezone.utc) - timedelta(seconds=ONLINE_WINDOW_SEC)
+    for v in presence.values():
+        at = (v or {}).get("at") or ""
+        try:
+            ts = datetime.fromisoformat(at.replace("Z", "+00:00"))
+            if ts.tzinfo is None:
+                ts = ts.replace(tzinfo=timezone.utc)
+            if ts >= cut:
+                n += 1
+        except Exception:
+            pass
+    return jsonify({"ok": True, "online": n})
+

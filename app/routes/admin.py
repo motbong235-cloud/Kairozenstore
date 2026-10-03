@@ -76,35 +76,93 @@ def me():
     return jsonify({"ok": True, "admin": bool(session.get("admin"))})
 
 
+
+def _parse_ts(s: str):
+    from datetime import datetime, timezone
+    if not s:
+        return None
+    try:
+        ts = datetime.fromisoformat(str(s).replace("Z", "+00:00"))
+        if ts.tzinfo is None:
+            ts = ts.replace(tzinfo=timezone.utc)
+        return ts
+    except Exception:
+        return None
+
+
+def _online_ips(d: dict) -> list:
+    from datetime import datetime, timezone, timedelta
+    cut = datetime.now(timezone.utc) - timedelta(seconds=180)
+    out = []
+    for ip, v in (d.get("presence") or {}).items():
+        ts = _parse_ts((v or {}).get("at") or "")
+        if ts and ts >= cut:
+            out.append({
+                "ip": ip,
+                "at": (v or {}).get("at"),
+                "user_id": (v or {}).get("user_id") or "",
+                "email": (v or {}).get("email") or "",
+            })
+    out.sort(key=lambda x: x.get("at") or "", reverse=True)
+    return out
+
+
+def _users_with_online(d: dict) -> list:
+    from datetime import datetime, timezone, timedelta
+    cut = datetime.now(timezone.utc) - timedelta(seconds=180)
+    online_ips = set()
+    for ip, v in (d.get("presence") or {}).items():
+        ts = _parse_ts((v or {}).get("at") or "")
+        if ts and ts >= cut:
+            online_ips.add(ip)
+    rows = []
+    for u in (d.get("users") or {}).values():
+        last_seen = u.get("last_seen") or u.get("last_login") or ""
+        ts = _parse_ts(last_seen)
+        ip = (u.get("last_ip") or "").strip()
+        online = bool((ts and ts >= cut) or (ip and ip in online_ips))
+        rows.append({
+            "id": u.get("id"),
+            "name": u.get("name"),
+            "email": u.get("email"),
+            "picture": u.get("picture"),
+            "created_at": u.get("created_at"),
+            "last_login": u.get("last_login"),
+            "last_seen": last_seen,
+            "last_ip": ip or "—",
+            "last_ip_at": u.get("last_ip_at"),
+            "balance": round(float(u.get("balance") or 0), 2),
+            "ip_history": list(u.get("ip_history") or [])[-5:],
+            "online": online,
+        })
+    online = [x for x in rows if x.get("online")]
+    offline = [x for x in rows if not x.get("online")]
+    online.sort(key=lambda x: x.get("last_seen") or "", reverse=True)
+    offline.sort(key=lambda x: x.get("last_seen") or x.get("last_login") or "", reverse=True)
+    return online + offline
+
+
 @bp.get("/data")
 @admin_required
 def data():
     d = db.read()
     for p in d.get("products") or []:
         order_service.sync_stock(d, p["id"])
+    low_stock_n = 0
+    for p in d.get("products") or []:
+        if not p.get("active", True):
+            continue
+        n = len((d.get("stock_files") or {}).get(str(p.get("id")), []) or [])
+        if n == 0:
+            n = int(p.get("stock") or 0)
+        if n <= 3:
+            low_stock_n += 1
     return jsonify({
         "ok": True,
         "settings": {k: v for k, v in (d.get("settings") or {}).items() if not k.startswith("_") and k != "ADMIN_PASSWORD"},
         "storage": db.storage_info(),
-        "users": sorted(
-            [
-                {
-                    "id": u.get("id"),
-                    "name": u.get("name"),
-                    "email": u.get("email"),
-                    "picture": u.get("picture"),
-                    "created_at": u.get("created_at"),
-                    "last_login": u.get("last_login"),
-                    "last_ip": u.get("last_ip") or "—",
-                    "last_ip_at": u.get("last_ip_at"),
-                    "balance": round(float(u.get("balance") or 0), 2),
-                    "ip_history": list(u.get("ip_history") or [])[-5:],
-                }
-                for u in (d.get("users") or {}).values()
-            ],
-            key=lambda x: x.get("last_login") or "",
-            reverse=True,
-        )[:200],
+        "users": _users_with_online(d)[:200],
+        "online_ips": _online_ips(d),
         "categories": d.get("categories") or [],
         "products": d.get("products") or [],
         "orders": (d.get("orders") or [])[:100],
@@ -115,6 +173,8 @@ def data():
         "stats": {
             "products": len(d.get("products") or []),
             "users": len(d.get("users") or {}),
+            "low_stock": low_stock_n,
+            "online_now": len(_online_ips(d)),
             "orders": len(d.get("orders") or []),
             "paid": sum(1 for o in d.get("orders") or [] if o.get("status") == "paid"),
             "pending": sum(
@@ -337,6 +397,62 @@ def order_deliver():
     return jsonify({"ok": True, "order": order})
 
 
+
+@bp.post("/order/refund")
+@admin_required
+def order_refund():
+    """Refund paid order to user wallet (or mark refunded)."""
+    body = request.get_json(force=True, silent=True) or {}
+    oid = (body.get("order_id") or "").strip()
+    d = db.read()
+    order = next((o for o in d.get("orders", []) if o.get("id") == oid), None)
+    if not order:
+        return jsonify({"ok": False, "error": "Not found"}), 404
+    if order.get("status") == "refunded":
+        return jsonify({"ok": False, "error": "Already refunded"}), 400
+    if order.get("status") != "paid":
+        return jsonify({"ok": False, "error": "Only paid orders can refund"}), 400
+    amount = float(order.get("price") or 0)
+    uid = order.get("user_id")
+    new_bal = None
+    if uid and order.get("type") != "topup":
+        # credit back product purchase
+        users = d.setdefault("users", {})
+        u = users.get(uid)
+        if u is not None:
+            new_bal = round(float(u.get("balance") or 0) + amount, 2)
+            u["balance"] = new_bal
+    elif uid and order.get("type") == "topup":
+        # reverse topup: debit
+        users = d.setdefault("users", {})
+        u = users.get(uid)
+        if u is not None:
+            bal = float(u.get("balance") or 0)
+            new_bal = round(max(0, bal - amount), 2)
+            u["balance"] = new_bal
+    order["status"] = "refunded"
+    order["refunded_at"] = order_service.utc_now()
+    order["refund_note"] = (body.get("note") or "").strip()[:200]
+    logs = d.setdefault("admin_logs", [])
+    logs.append({
+        "at": order_service.utc_now(),
+        "action": "refund",
+        "order_id": oid,
+        "amount": amount,
+        "user_id": uid,
+        "note": order.get("refund_note"),
+    })
+    d["admin_logs"] = logs[-200:]
+    db.write(d)
+    try:
+        order_service.notify_telegram(
+            f"↩️ REFUND\nOrder {oid}\n${amount:.2f}\nUser {order.get('contact') or uid or '-'}"
+        )
+    except Exception:
+        pass
+    return jsonify({"ok": True, "order": order, "balance": new_bal})
+
+
 @bp.put("/settings")
 @admin_required
 def settings():
@@ -344,7 +460,7 @@ def settings():
     d = db.read()
     s = d.setdefault("settings", {})
     keys = [
-        "SITE_NAME", "SITE_TAGLINE", "ADMIN_PASSWORD", "SHOP_NAME", "TELEGRAM",
+        "SITE_NAME", "SITE_TAGLINE", "ADMIN_PASSWORD", "SHOP_NAME", "TELEGRAM", "TELEGRAM_BOT_TOKEN", "TELEGRAM_CHAT_ID",
         "CURRENCY", "PAYMENT_NOTE", "PAYMENT_QR", "BAKONG_ID",
         "KHMER_SECRET_KEY", "KHMER_PROFILE_KEY", "KHMER_MACHINE_ID", "KHMER_MERCHANT_NAME",
         "SITE_DESCRIPTION", "GOOGLE_CLIENT_ID", "REQUIRE_LOGIN",

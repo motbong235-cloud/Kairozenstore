@@ -40,6 +40,16 @@ def profile():
     return render_template("shop/profile.html", site=_site())
 
 
+@bp.get("/faq")
+def faq():
+    return render_template("shop/faq.html", site=_site())
+
+
+@bp.get("/terms")
+def terms():
+    return render_template("shop/terms.html", site=_site())
+
+
 @bp.get("/product/<int:pid>")
 def product_detail(pid: int):
     """Shiryu-style product detail page."""

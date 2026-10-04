@@ -463,9 +463,29 @@ def order_refund():
     return jsonify({"ok": True, "order": order, "balance": new_bal})
 
 
+@bp.get("/tenants")
+@admin_required
+def tenants_list():
+    from app.services import tenants as ten
+    return jsonify({"ok": True, "tenants": ten.list_tenants(), "price": ten.plan_price(), "base_domain": ten.base_domain()})
+
+
+@bp.post("/tenants/activate")
+@admin_required
+def tenants_activate():
+    from app.services import tenants as ten
+    body = request.get_json(force=True, silent=True) or {}
+    slug = (body.get("slug") or "").strip().lower()
+    t = ten.activate_tenant(slug)
+    if not t:
+        return jsonify({"ok": False, "error": "Not found"}), 404
+    return jsonify({"ok": True, "tenant": t})
+
+
 @bp.put("/settings")
 @admin_required
 def settings():
+
     body = request.get_json(force=True, silent=True) or {}
     d = db.read()
     s = d.setdefault("settings", {})
@@ -633,7 +653,7 @@ def backup():
     return Response(
         payload,
         mimetype="application/json",
-        headers={"Content-Disposition": f"attachment; filename=kairozen-backup-{stamp}.json"},
+        headers={"Content-Disposition": f"attachment; filename=premiumkh-backup-{stamp}.json"},
     )
 
 

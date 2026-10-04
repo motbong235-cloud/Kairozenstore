@@ -221,3 +221,144 @@ def webhook_khpay():
     db.write(data)
     return jsonify({"ok": True, "order_id": order.get("id")})
 
+
+
+
+# ── Partner / multi-tenant ($25 store) ──────────────────────────
+@bp.post("/partner/register")
+def partner_register():
+    from app.services import tenants as ten
+    from app.services import khpay as khpay_svc
+    if not security.rate_limit("partner_reg", limit=5, window_sec=60):
+        return jsonify({"ok": False, "error": "Too many requests"}), 429
+    body = request.get_json(force=True, silent=True) or {}
+    result = ten.create_tenant_pending(
+        slug=body.get("slug") or "",
+        shop_name=body.get("shop_name") or "",
+        email=body.get("email") or "",
+        owner_id=(current_user() or {}).get("id"),
+    )
+    if not result.get("ok"):
+        return jsonify(result), 400
+    tenant = result["tenant"]
+    price = float(result["price"])
+    order_id = result["order_id"]
+    payment = None
+    # Try KHPAY QR using platform (main) settings
+    settings = (db.read().get("settings") or {})
+    api_key = (settings.get("KHPAY_API_KEY") or "").strip()
+    merchant = (settings.get("KHPAY_MERCHANT_ID") or "").strip()
+    if api_key and merchant:
+        try:
+            base = (settings.get("SITE_URL") or request.url_root or "").rstrip("/")
+            pay = khpay_svc.create(
+                api_key=api_key,
+                merchant_id=merchant,
+                amount=price,
+                order_id=order_id,
+                description=f"Store plan {tenant['slug']}",
+                callback_url=f"{base}/api/webhook/khpay",
+                metadata={"type": "tenant_plan", "slug": tenant["slug"], "order_id": order_id},
+            )
+            if pay.get("ok") or pay.get("qr") or pay.get("transaction_id"):
+                payment = {
+                    "qr": pay.get("qr") or pay.get("qr_data_uri") or pay.get("qr_image"),
+                    "aba_deeplink": pay.get("aba_deeplink") or pay.get("deeplink"),
+                    "transaction_id": pay.get("transaction_id"),
+                }
+                # store txn on tenant
+                t2 = ten.get_tenant(tenant["slug"])
+                if t2:
+                    t2["khpay_transaction_id"] = payment.get("transaction_id")
+                    ten.save_tenant(t2)
+        except Exception:
+            payment = None
+    return jsonify({
+        "ok": True,
+        "order_id": order_id,
+        "price": price,
+        "slug": tenant["slug"],
+        "subdomain": tenant.get("subdomain") or tenant["slug"],
+        "payment": payment,
+        "message": "Scan QR to pay" if payment else "Pay then contact admin to activate",
+    })
+
+
+@bp.post("/partner/check")
+def partner_check():
+    from app.services import tenants as ten
+    from app.services import khpay as khpay_svc
+    body = request.get_json(force=True, silent=True) or {}
+    slug = (body.get("slug") or "").strip().lower()
+    order_id = (body.get("order_id") or "").strip()
+    t = ten.get_tenant(slug)
+    if not t:
+        return jsonify({"ok": False, "error": "Not found"}), 404
+    if t.get("status") == "active":
+        return jsonify({"ok": True, "paid": True, "status": "active"})
+    # poll KHPAY
+    settings = (db.read().get("settings") or {})
+    api_key = (settings.get("KHPAY_API_KEY") or "").strip()
+    txn = t.get("khpay_transaction_id")
+    if api_key and txn:
+        try:
+            resp = khpay_svc.check(api_key=api_key, transaction_id=str(txn))
+            if resp.get("paid"):
+                ten.activate_tenant(slug)
+                return jsonify({"ok": True, "paid": True, "status": "active"})
+        except Exception:
+            pass
+    return jsonify({"ok": True, "paid": False, "status": t.get("status")})
+
+
+@bp.post("/platform/register-tenant")
+def register_tenant():
+    """Create store on subdomain — only from main domain."""
+    from flask import g
+    from datetime import datetime, timezone
+    from app.tenant import is_valid_slug, root_domain
+    from app.database import tenant_data_dir
+    import json
+
+    if getattr(g, "is_tenant", False):
+        return jsonify({"ok": False, "error": "Use main site"}), 400
+    if not security.rate_limit("reg_tenant", limit=5, window_sec=3600):
+        return jsonify({"ok": False, "error": "Too many requests"}), 429
+    body = request.get_json(force=True, silent=True) or {}
+    slug = (body.get("slug") or "").strip().lower()
+    name = (body.get("name") or slug).strip()[:80]
+    telegram = (body.get("telegram") or "").strip()[:200]
+    if not is_valid_slug(slug):
+        return jsonify({"ok": False, "error": "Slug មិនត្រឹមត្រូវ (a-z 0-9 -)"}), 400
+    d = db.read()
+    tenants = d.setdefault("tenants", {})
+    if slug in tenants:
+        return jsonify({"ok": False, "error": "Subdomain នេះមានរួច"}), 400
+    tdir = tenant_data_dir(slug)
+    tdb = tdir / "db.json"
+    if not tdb.exists():
+        doc = {
+            "settings": {
+                "SITE_NAME": name or slug,
+                "SHOP_NAME": name or slug,
+                "SITE_TAGLINE": "Premium accounts · KHQR",
+                "TELEGRAM": telegram,
+                "REQUIRE_LOGIN": True,
+            },
+            "products": [],
+            "categories": [],
+            "orders": [],
+            "users": {},
+            "stock_files": {},
+        }
+        tdb.write_text(json.dumps(doc, ensure_ascii=False, indent=2), encoding="utf-8")
+    tenants[slug] = {
+        "slug": slug,
+        "name": name,
+        "telegram": telegram,
+        "active": True,
+        "created_at": datetime.now(timezone.utc).isoformat(),
+    }
+    d["tenants"] = tenants
+    db.write(d)
+    return jsonify({"ok": True, "slug": slug, "url": f"https://{slug}.{root_domain()}"})

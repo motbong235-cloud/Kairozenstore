@@ -7,6 +7,8 @@ from pathlib import Path
 from flask import Blueprint, Response, abort, current_app, jsonify, render_template, request, send_from_directory
 
 from app import database as db
+from app.tenant import is_valid_slug, root_domain, current_slug
+from app.services import tenants as ten_svc
 
 bp = Blueprint("web", __name__)
 
@@ -32,6 +34,19 @@ def _site() -> dict:
 
 @bp.get("/")
 def home():
+    from flask import g, abort
+    import json
+    slug = getattr(g, "tenant_slug", None)
+    if slug:
+        try:
+            main = db.resolve_data_dir() / "db.json"
+            if main.exists():
+                reg = json.loads(main.read_text(encoding="utf-8"))
+                t = (reg.get("tenants") or {}).get(slug)
+                if t is not None and not t.get("active", True):
+                    abort(404)
+        except Exception:
+            pass
     return render_template("shop/index.html", site=_site())
 
 
@@ -70,6 +85,17 @@ def privacy():
     return render_template("shop/privacy.html", site=_site())
 
 
+@bp.get("/partner")
+def partner():
+    """Signup page — open a store on subdomain for $25."""
+    return render_template(
+        "shop/partner.html",
+        site=_site(),
+        price=ten_svc.plan_price(),
+        base_domain=ten_svc.base_domain() or "yourdomain.com",
+    )
+
+
 @bp.get("/products")
 def products():
     """Shiryu-style full catalog."""
@@ -106,11 +132,22 @@ def admin_decoy():
     abort(404)
 
 
+
+
+@bp.get("/open-store")
+def open_store_page():
+    """Public page: request your subdomain store."""
+    return render_template("shop/open_store.html", site=_site(), root_domain=root_domain())
+
+
+
 @bp.get("/health")
 def health():
     return jsonify({
         "ok": True,
         "app": "Kairozen Store",
+        "tenant": current_slug(),
+        "root_domain": root_domain(),
         "storage": db.storage_info(),
     })
 

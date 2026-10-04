@@ -7,6 +7,43 @@ from typing import Any
 
 from app import database as db
 from app.services import khpay
+from app.services import email_service
+
+import os
+import time
+from pathlib import Path as _Path
+
+_STOCK_LOCK = _Path(os.environ.get("DATA_DIR") or "data") / ".stock.lock"
+
+
+def _with_stock_lock(fn):
+    """Simple cross-process lock for stock pop (works with gunicorn workers)."""
+    _STOCK_LOCK.parent.mkdir(parents=True, exist_ok=True)
+    deadline = time.time() + 8
+    while time.time() < deadline:
+        try:
+            fd = os.open(str(_STOCK_LOCK), os.O_CREAT | os.O_EXCL | os.O_WRONLY)
+            try:
+                os.write(fd, str(os.getpid()).encode())
+            finally:
+                os.close(fd)
+            try:
+                return fn()
+            finally:
+                try:
+                    _STOCK_LOCK.unlink(missing_ok=True)
+                except Exception:
+                    pass
+        except FileExistsError:
+            try:
+                age = time.time() - _STOCK_LOCK.stat().st_mtime
+                if age > 15:
+                    _STOCK_LOCK.unlink(missing_ok=True)
+            except Exception:
+                pass
+            time.sleep(0.05)
+    return fn()  # last resort
+
 
 def notify_telegram(text: str) -> None:
     """Fire-and-forget admin Telegram message (optional settings)."""
@@ -97,12 +134,23 @@ def fulfill(data: dict, order: dict) -> dict:
         order["balance_after"] = new_bal
         return order
 
-    delivery = pop_stock(data, order["product_id"])
+    def _pop():
+        return pop_stock(data, order["product_id"])
+    delivery = _with_stock_lock(_pop)
     order["delivery"] = delivery
     order["status"] = "paid" if delivery else "waiting_confirm"
     order["paid_at"] = utc_now()
     if order.get("product_id"):
         sync_stock(data, order["product_id"])
+    # email customer (best-effort)
+    try:
+        settings = data.get("settings") or {}
+        uid = order.get("user_id")
+        user = (data.get("users") or {}).get(uid) if uid else None
+        email_service.notify_order_paid(order, user, settings)
+    except Exception:
+        pass
+
     # notify admin (best-effort)
     try:
         kind = "TOPUP" if order.get("type") == "topup" else "ORDER"

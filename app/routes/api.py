@@ -32,6 +32,15 @@ def catalog():
             "BANNER_SUBTITLE": settings.get("BANNER_SUBTITLE") or "Premium accounts · Instant delivery · Trusted",
             "BANNER_OFF": settings.get("BANNER_OFF") or "10%",
             "BANNER_IMAGE": settings.get("BANNER_IMAGE") or "",
+            "BANNER_IMAGES": settings.get("BANNER_IMAGES") or [],
+            "FOOTER_ABOUT": settings.get("FOOTER_ABOUT") or "",
+            "FOOTER_EMAIL": settings.get("FOOTER_EMAIL") or "",
+            "FOOTER_ADDRESS": settings.get("FOOTER_ADDRESS") or "Cambodia, Phnom Penh",
+            "SOCIAL_FACEBOOK": settings.get("SOCIAL_FACEBOOK") or "",
+            "SOCIAL_TELEGRAM": settings.get("SOCIAL_TELEGRAM") or settings.get("TELEGRAM") or "",
+            "SOCIAL_TIKTOK": settings.get("SOCIAL_TIKTOK") or "",
+            "SOCIAL_YOUTUBE": settings.get("SOCIAL_YOUTUBE") or "",
+
             "MARQUEE_TEXT": settings.get("MARQUEE_TEXT") or "",
 
         },
@@ -81,9 +90,9 @@ def create_order():
 @bp.post("/order/check-payment")
 def check_payment():
     """Poll KHPAY only — never marks paid without provider confirmation."""
-    if not security.rate_limit("order_check", limit=12, window_sec=60):
+    if not security.rate_limit("order_check", limit=40, window_sec=60):
         return jsonify({"ok": False, "error": "Too many checks · wait"}), 429
-    if not security.rate_limit("order_check_burst", limit=3, window_sec=5):
+    if not security.rate_limit("order_check_burst", limit=8, window_sec=5):
         return jsonify({"ok": False, "error": "Slow down"}), 429
     body = request.get_json(force=True, silent=True) or {}
     oid = (body.get("order_id") or "").strip()

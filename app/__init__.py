@@ -62,20 +62,29 @@ def create_app(config_class=Config) -> Flask:
         if sec.is_probe_path(path):
             abort(404)
 
-        # 2) Global API rate limit (per IP)
+        # 2) Global API rate limit (per IP) — soft on reads, strict on writes
         if path.startswith("/api/"):
-            # webhooks need higher allowance
-            if path.startswith("/api/webhook/"):
+            method = (request.method or "GET").upper()
+            # Public catalog / health: very high limit (page load polls these)
+            if path in ("/api/catalog", "/health") or path.startswith("/api/catalog"):
+                if not sec.rate_limit("catalog", limit=600, window_sec=60):
+                    return jsonify({"ok": False, "error": "Too many requests"}), 429
+            elif path.startswith("/api/webhook/"):
                 if not sec.rate_limit("webhook", limit=120, window_sec=60):
                     return jsonify({"ok": False, "error": "Too many requests"}), 429
             elif path.startswith("/api/auth/heartbeat"):
-                if not sec.rate_limit("hb", limit=30, window_sec=60):
+                if not sec.rate_limit("hb", limit=60, window_sec=60):
                     return jsonify({"ok": True, "throttled": True})
             elif path.startswith("/api/admin/"):
-                if not sec.rate_limit("admin_api", limit=90, window_sec=60):
+                if not sec.rate_limit("admin_api", limit=120, window_sec=60):
+                    return jsonify({"ok": False, "error": "Too many requests"}), 429
+            elif method in ("GET", "HEAD"):
+                # other reads
+                if not sec.rate_limit("api_read", limit=300, window_sec=60):
                     return jsonify({"ok": False, "error": "Too many requests"}), 429
             else:
-                if not sec.rate_limit("api", limit=120, window_sec=60):
+                # POST/PUT/DELETE — stricter (orders, topup, login)
+                if not sec.rate_limit("api_write", limit=60, window_sec=60):
                     return jsonify({"ok": False, "error": "Too many requests"}), 429
 
         # 3) Method hardening

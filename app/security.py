@@ -46,8 +46,9 @@ def _redis_client():
         client = redis.from_url(
             url,
             decode_responses=True,
-            socket_connect_timeout=2,
-            socket_timeout=2,
+            socket_connect_timeout=0.3,
+            socket_timeout=0.3,
+            retry_on_timeout=False,
         )
         client.ping()
         _redis = client
@@ -113,23 +114,28 @@ def _record_block(ip: str, key: str, limit: int, window_sec: int, hits: int) -> 
 
 
 def rate_limit(key: str, limit: int, window_sec: int) -> bool:
-    """Return True if allowed. Uses Redis fixed-window counter when available."""
+    """Return True if allowed. Redis when available; never blocks the request long."""
     ip = client_ip()
     r = _redis_client()
     if r:
         try:
-            # Fixed window: kz:rl:{key}:{ip}:{window_id}
             window_id = int(time.time() // window_sec)
             rk = f"kz:rl:{key}:{ip}:{window_id}"
             n = r.incr(rk)
             if n == 1:
                 r.expire(rk, window_sec + 2)
             if n > limit:
-                _record_block(ip, key, limit, window_sec, n)
+                try:
+                    _record_block(ip, key, limit, window_sec, n)
+                except Exception:
+                    pass
                 return False
             return True
         except Exception:
-            pass  # fall through to memory
+            # Redis slow/down → mark failed so we stop trying this process
+            global _redis_failed, _redis
+            _redis_failed = True
+            _redis = None
 
     now = time.time()
     bucket_key = f"{key}:{ip}"

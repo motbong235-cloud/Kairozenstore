@@ -40,6 +40,11 @@ th{color:var(--muted);font-size:10px;text-transform:uppercase}
 .mono{font-family:var(--mono)}
 .badge{display:inline-block;padding:2px 8px;border-radius:99px;font-size:10px;font-weight:800}
 .badge.paid{background:#dcfce7;color:#16a34a}
+.badge.on{background:#dcfce7;color:#15803d}
+.badge.off{background:#f1f5f9;color:#94a3b8}
+.dot-on{display:inline-block;width:8px;height:8px;border-radius:50%;background:#22c55e;box-shadow:0 0 0 3px rgba(34,197,94,.25);margin-right:4px;animation:pulseOn 1.6s ease infinite}
+@keyframes pulseOn{0%,100%{box-shadow:0 0 0 3px rgba(34,197,94,.25)}50%{box-shadow:0 0 0 6px rgba(34,197,94,.1)}}
+
 .badge.pending{background:#fef3c7;color:#d97706}
 .badge.wait{background:#dbeafe;color:#1d4ed8}
 .field{margin-bottom:12px}
@@ -73,6 +78,12 @@ th{color:var(--muted);font-size:10px;text-transform:uppercase}
     <h2>Kairozen Admin</h2>
     <p>Orders · Products · Stock · Payment</p>
     <div class="field" style="text-align:left"><label>Password</label><input id="admPass" type="password"></div>
+    <div class="field" style="text-align:left" id="captchaBox">
+      <label>CAPTCHA · <span id="capQ">...</span></label>
+      <input id="admCap" type="text" inputmode="numeric" placeholder="ចម្លើយ">
+      <input type="text" id="admHp" name="website" value="" style="position:absolute;left:-9999px;opacity:0" tabindex="-1" autocomplete="off">
+      <input type="hidden" id="admCapTok">
+    </div>
     <div class="err" id="admErr"></div>
     <button class="btn btn-v" style="width:100%" type="button" onclick="doLogin()">Login</button>
   </div>
@@ -94,6 +105,7 @@ th{color:var(--muted);font-size:10px;text-transform:uppercase}
     <button class="tab" data-t="stock" onclick="tab('stock')">Stock</button>
     <button class="tab" data-t="users" onclick="tab('users')">Users</button>
     <button class="tab" data-t="tools" onclick="tab('tools')">Tools</button>
+    <button class="tab" data-t="spam" onclick="tab('spam')">Spam / IP</button>
     <button class="tab" data-t="settings" onclick="tab('settings')">Settings</button>
   </div>
 
@@ -151,7 +163,7 @@ th{color:var(--muted);font-size:10px;text-transform:uppercase}
     <h3>Google users</h3>
     <p class="help" style="margin-bottom:10px">Last IP កត់ពេល login (X-Forwarded-For លើ Render) · hover IP ដើម្បីមើល history · មិនបង្ហាញជាសាធារណៈ</p>
     <div style="overflow-x:auto"><table>
-      <thead><tr><th>User</th><th>Email</th><th>Balance</th><th>Last IP</th><th>Joined</th><th>Last login</th><th></th></tr></thead>
+      <thead><tr><th>Status</th><th>User</th><th>Email</th><th>Balance</th><th>Last IP</th><th>Joined</th><th>Last seen</th><th></th></tr></thead>
       <tbody id="userRows"></tbody>
     </table></div>
   </div>
@@ -189,6 +201,32 @@ th{color:var(--muted);font-size:10px;text-transform:uppercase}
       </div>
       <button class="btn btn-v" type="button" onclick="saveCat()">Save category</button>
       <div id="catList" style="margin-top:12px;font-size:12px"></div>
+    </div>
+  </div>
+
+  
+  <div id="t-spam" class="card hidden">
+    <h3>Spam · Rate limit · IP</h3>
+    <p class="help" style="margin-bottom:12px">IP rate-limit / lockout · <b>Redis</b> បើមាន REDIS_URL (រក្សា 7 ថ្ងៃ) · បើអត់ = memory</p>
+    <div class="row" style="margin-bottom:12px">
+      <button class="btn btn-ghost" type="button" onclick="load()">Refresh</button>
+      <span id="spamTotal" style="font-size:12px;color:var(--muted);align-self:center"></span>
+    </div>
+    <h4 style="font-size:13px;font-weight:800;margin-bottom:8px">Top IPs</h4>
+    <div style="overflow-x:auto;margin-bottom:16px">
+      <table>
+        <thead><tr><th>IP</th><th>Hits</th><th>Keys</th><th>Last</th><th>Paths</th></tr></thead>
+        <tbody id="spamIpRows"></tbody>
+      </table>
+    </div>
+    <h4 style="font-size:13px;font-weight:800;margin-bottom:8px">Active lockouts</h4>
+    <div id="spamLocks" style="font-size:12px;color:var(--muted);margin-bottom:16px">—</div>
+    <h4 style="font-size:13px;font-weight:800;margin-bottom:8px">Recent events</h4>
+    <div style="overflow-x:auto">
+      <table>
+        <thead><tr><th>Time</th><th>IP</th><th>Key</th><th>Hits</th><th>Path</th></tr></thead>
+        <tbody id="spamEvRows"></tbody>
+      </table>
     </div>
   </div>
 
@@ -253,8 +291,23 @@ th{color:var(--muted);font-size:10px;text-transform:uppercase}
     </div>
     <div class="field"><label>Shop Name</label><input id="s_SHOP_NAME"></div>
     <div class="field"><label>Tagline</label><input id="s_SITE_TAGLINE"></div>
-    <div class="field"><label>Telegram</label><input id="s_TELEGRAM"></div>
+    <div class="field"><label>Telegram support link</label><input id="s_TELEGRAM" placeholder="https://t.me/yourshop"></div>
+    <div class="ks" style="background:#eff6ff;border-color:#bfdbfe">
+      <h4>Telegram Admin Notify</h4>
+      <div class="field"><label>Bot Token</label><input id="s_TELEGRAM_BOT_TOKEN" placeholder="123456:ABC..."></div>
+      <div class="field"><label>Chat ID (admin)</label><input id="s_TELEGRAM_CHAT_ID" placeholder="123456789"></div>
+      <div class="help">BotFather → /newbot → token។ Chat ID: ផ្ញើសារទៅ bot រួចเปิด api.telegram.org/botTOKEN/getUpdates</div>
+    </div>
     <div class="field"><label>Static QR URL (fallback)</label><input id="s_PAYMENT_QR"></div>
+    <div class="ks" style="background:#f0fdf4;border-color:#bbf7d0">
+      <h4>Email (SMTP) · Order success</h4>
+      <div class="field"><label>SMTP Host</label><input id="s_SMTP_HOST" placeholder="smtp.gmail.com"></div>
+      <div class="field"><label>SMTP Port</label><input id="s_SMTP_PORT" placeholder="587"></div>
+      <div class="field"><label>SMTP User</label><input id="s_SMTP_USER" placeholder="you@gmail.com"></div>
+      <div class="field"><label>SMTP Password</label><input id="s_SMTP_PASSWORD" type="password" placeholder="app password"></div>
+      <div class="field"><label>From email</label><input id="s_SMTP_FROM" placeholder="noreply@kairozen.store"></div>
+      <div class="help">Gmail: បើក 2FA → App Password។ Order paid / topup នឹងផ្ញើទៅ email Google user។</div>
+    </div>
     <div class="field"><label>Admin Password</label><input id="s_ADMIN_PASSWORD" type="password" placeholder="leave blank = no change"></div>
     <button class="btn btn-v" type="button" onclick="saveSettings()">Save settings</button>
     <div class="ks" style="margin-top:18px;background:#f8fafc;border-color:var(--line)">
@@ -279,14 +332,20 @@ function toast(m,e){const t=$('#toast');t.textContent=m;t.classList.toggle('err'
 function esc(s){return String(s||'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
 
 async function doLogin(){
-  const r = await api('admin/login',{method:'POST',body:JSON.stringify({password:$('#admPass').value})});
+  const r = await api('admin/login',{method:'POST',body:JSON.stringify({
+    password:$('#admPass').value,
+    captcha_token: $('#admCapTok')?.value||'',
+    captcha_answer: $('#admCap')?.value||'',
+    website: $('#admHp')?.value||''
+  })});
+  if(r.captcha_required){ await loadCaptcha(); }
   if(!r.ok){$('#admErr').textContent=r.error||'Fail';return}
   $('#gate').classList.add('hidden');$('#app').classList.remove('hidden');load();
 }
 async function doLogout(){await api('admin/logout',{method:'POST'});location.reload()}
 function tab(n){
   document.querySelectorAll('.tab').forEach(t=>t.classList.toggle('on',t.dataset.t===n));
-  ['orders','products','stock','users','tools','settings'].forEach(x=>$('#t-'+x)?.classList.toggle('hidden',x!==n));
+  ['orders','products','stock','users','tools','spam','settings'].forEach(x=>$('#t-'+x)?.classList.toggle('hidden',x!==n));
 }
 
 let DATA={};
@@ -297,24 +356,27 @@ async function load(){
   const s=r.stats||{};
   $('#stats').innerHTML=`
     <div class="stat"><div class="l">Users</div><div class="v">${s.users||0}</div></div>
+    <div class="stat"><div class="l">Online now</div><div class="v" style="color:#16a34a">${s.online_now||0}</div></div>
     <div class="stat"><div class="l">Products</div><div class="v">${s.products||0}</div></div>
     <div class="stat"><div class="l">Orders</div><div class="v">${s.orders||0}</div></div>
     <div class="stat"><div class="l">Paid</div><div class="v" style="color:var(--green)">${s.paid||0}</div></div>
     <div class="stat"><div class="l">Pending</div><div class="v" style="color:var(--gold)">${s.pending||0}</div></div>
+    <div class="stat"><div class="l">Low stock</div><div class="v" style="color:${(s.low_stock||0)>0?'#dc2626':'#16a34a'}">${s.low_stock||0}</div></div>
     <div class="stat"><div class="l">Revenue</div><div class="v" style="color:#1d4ed8">$${(s.revenue||0).toFixed(0)}</div></div>`;
 
   renderCats(r.categories);
   $('#orderRows').innerHTML=(r.orders||[]).map(o=>{
     const st=o.status==='paid'?'paid':(o.status==='waiting_confirm'?'wait':'pending');
     const label=o.status==='paid'?'PAID':(o.status==='waiting_confirm'?'WAIT':'PENDING');
-    const btn=o.status!=='paid'?`<button class="btn btn-g" style="padding:4px 10px;font-size:11px" onclick="confirmOrder('${esc(o.id)}')">Confirm</button>`:'';
+    const btn=o.status!=='paid'&&o.status!=='refunded'?`<button class="btn btn-g" style="padding:4px 10px;font-size:11px" onclick="confirmOrder('${esc(o.id)}')">Confirm</button>`:'';
+    const ref=o.status==='paid'?`<button class="btn btn-r" style="padding:4px 10px;font-size:11px" onclick="refundOrder('${esc(o.id)}')">Refund</button>`:(o.status==='refunded'?'<span class="badge off">REFUND</span>':'');
     return `<tr>
       <td class="mono">${esc(o.id)}</td>
       <td>${esc(o.product_name)}<div style="font-size:10px;color:var(--muted)">${esc(o.contact||'')}</div></td>
       <td class="mono">$${Number(o.price||0).toFixed(2)}</td>
       <td><span class="badge ${st}">${label}</span></td>
       <td class="mono" style="font-size:10px;max-width:140px;overflow:hidden;text-overflow:ellipsis">${esc((o.delivery||'—').slice(0,40))}</td>
-      <td>${btn}</td>
+      <td>${btn} ${ref||''}</td>
     </tr>`;
   }).join('')||`<tr><td colspan="6" style="color:var(--muted)">No orders</td></tr>`;
 
@@ -337,6 +399,17 @@ async function load(){
     ? `<div class="okb">✓ Data រក្សាទុកអចិន្ត្រៃយ៍ (${esc(stg.mode)}) — update website មិនបាត់ data ទេ</div>`
     : `<div class="warn"><b>⚠ Data អាចបាត់ពេល deploy!</b> Server នេះប្រើ disk បណ្តោះអាសន្ន។ សូមដាក់ <code>DATABASE_URL</code> (Postgres) ឬ Persistent Disk + <code>DATA_DIR</code> ក្នុង Render។ ឥឡូវនេះសូម Download backup ជាប្រចាំ។</div>`;
   USER_LIST = r.users || [];
+  renderSpam(r.spam || {});
+
+  (function(){
+    const box=$('#onlineIpBox');
+    if(!box) return;
+    const ips=r.online_ips||[];
+    if(!ips.length){ box.innerHTML='<span style="color:var(--muted)">No live IPs (online = activity ≤ 3 នាទី)</span>'; return; }
+    box.innerHTML='<b style="color:#16a34a">Live on site ('+ips.length+')</b><div style="margin-top:6px">'+ips.map(x=>
+      `<span class="badge on" style="margin:2px 4px 2px 0"><i class="dot-on"></i>${esc(x.ip)}${x.email?' · '+esc(x.email):''}</span>`
+    ).join('')+'</div>';
+  })();
   if($('#userCount')) $('#userCount').textContent = '('+USER_LIST.length+')';
   if($('#userEmpty')) $('#userEmpty').style.display = USER_LIST.length ? 'none' : 'block';
   renderUserRows(USER_LIST);
@@ -344,7 +417,7 @@ async function load(){
   const set=r.settings||{};
   $('#s_REQUIRE_LOGIN').checked=!!set.REQUIRE_LOGIN;
   $('#origin').textContent=location.origin;
-  ['SITE_NAME','SITE_DESCRIPTION','GOOGLE_CLIENT_ID','KHPAY_API_KEY','KHPAY_MERCHANT_ID','KHPAY_WEBHOOK_SECRET','KHPAY_CALLBACK_URL','SITE_URL','BAKONG_ID','SHOP_NAME','SITE_TAGLINE','TELEGRAM','PAYMENT_QR','BANNER_TITLE','BANNER_SUBTITLE','BANNER_OFF','BANNER_IMAGE','MARQUEE_TEXT'].forEach(k=>{
+  ['SITE_NAME','SITE_DESCRIPTION','GOOGLE_CLIENT_ID','KHPAY_API_KEY','KHPAY_MERCHANT_ID','KHPAY_WEBHOOK_SECRET','KHPAY_CALLBACK_URL','SITE_URL','BAKONG_ID','SHOP_NAME','SITE_TAGLINE','TELEGRAM','TELEGRAM_BOT_TOKEN','TELEGRAM_CHAT_ID','SMTP_HOST','SMTP_PORT','SMTP_USER','SMTP_PASSWORD','SMTP_FROM','PAYMENT_QR','BANNER_TITLE','BANNER_SUBTITLE','BANNER_OFF','BANNER_IMAGE','MARQUEE_TEXT'].forEach(k=>{
     const el=$('#s_'+k); if(el) el.value=set[k]??'';
   });
   if($('#s_BANNER_IMAGE')?.value) showBannerPrev($('#s_BANNER_IMAGE').value);
@@ -402,25 +475,80 @@ let USER_LIST = [];
 function renderUserRows(list){
   const q = (($('#userSearch')||{}).value||'').trim().toLowerCase();
   let rows = list || USER_LIST || [];
-  if(q) rows = rows.filter(u => ((u.email||'')+(u.name||'')+(u.id||'')).toLowerCase().includes(q));
+  if(q) rows = rows.filter(u => ((u.email||'')+(u.name||'')+(u.id||'')+(u.last_ip||'')).toLowerCase().includes(q));
   const el = $('#userRows');
   if(!el) return;
   el.innerHTML = rows.length ? rows.map(u=>{
     const hist=(u.ip_history||[]).map(h=>esc((h.ip||'')+' @ '+String(h.at||'').slice(0,16).replace('T',' '))).join(' · ');
     const tip=hist?` title="${hist}"`:"";
+    const st=u.online
+      ? `<span class="badge on"><i class="dot-on"></i>Online</span>`
+      : `<span class="badge off">Offline</span>`;
+    const seen = u.last_seen || u.last_login || '';
     return `<tr>
+      <td>${st}</td>
       <td>${u.picture?`<img class="ava" src="${esc(u.picture)}" referrerpolicy="no-referrer" alt="">`:''}${esc(u.name||'')}</td>
       <td>${esc(u.email||'')}<div class="mono" style="font-size:9px;color:var(--muted)">${esc(u.id||'')}</div></td>
       <td class="mono">$${Number(u.balance||0).toFixed(2)}</td>
       <td class="mono" style="font-size:11px;color:var(--blue)"${tip}>${esc(u.last_ip||'—')}</td>
       <td class="mono" style="font-size:10px">${esc((u.created_at||'').slice(0,10))}</td>
-      <td class="mono" style="font-size:10px">${esc((u.last_login||'').slice(0,16).replace('T',' '))}</td>
+      <td class="mono" style="font-size:10px">${esc(String(seen).slice(0,16).replace('T',' '))}</td>
       <td><button class="btn btn-ghost" style="padding:4px 8px;font-size:11px" type="button" onclick="fillCredit('${esc(u.email||'')}')">+$</button></td>
     </tr>`;
-  }).join('') : '<tr><td colspan="7" style="color:var(--muted)">No users yet</td></tr>';
+  }).join('') : '<tr><td colspan="8" style="color:var(--muted)">No users yet</td></tr>';
 }
+
 function filterUsers(){ renderUserRows(USER_LIST); }
 
+function renderSpam(spam){
+  const by = spam.by_ip || [];
+  const el = $('#spamIpRows');
+  if(el){
+    el.innerHTML = by.length ? by.map(x=>{
+      const keys = Object.entries(x.keys||{}).map(([k,v])=>k+':'+v).join(', ');
+      return `<tr>
+        <td class="mono" style="color:var(--blue)">${esc(x.ip)}</td>
+        <td class="mono"><b>${x.count}</b></td>
+        <td style="font-size:11px">${esc(keys)}</td>
+        <td class="mono" style="font-size:10px">${esc(String(x.last_at||'').replace('T',' ').slice(0,19))}</td>
+        <td style="font-size:10px;color:var(--muted)">${esc((x.paths||[]).join(' · '))}</td>
+      </tr>`;
+    }).join('') : '<tr><td colspan="5" style="color:var(--muted)">No spam hits yet</td></tr>';
+  }
+  if($('#spamTotal')) $('#spamTotal').textContent = 'Events: '+(spam.total_events||0)+' · backend: '+(spam.backend||'memory');
+  const locks = spam.lockouts || [];
+  if($('#spamLocks')){
+    $('#spamLocks').innerHTML = locks.length
+      ? locks.map(l=>`<div class="mono">${esc(l.key)} · ${l.seconds_left}s left</div>`).join('')
+      : 'No active lockouts';
+  }
+  const ev = spam.events || [];
+  if($('#spamEvRows')){
+    $('#spamEvRows').innerHTML = ev.length ? ev.map(e=>`<tr>
+      <td class="mono" style="font-size:10px">${esc(String(e.at||'').replace('T',' ').slice(0,19))}</td>
+      <td class="mono" style="color:var(--blue)">${esc(e.ip)}</td>
+      <td style="font-size:11px">${esc(e.key)}</td>
+      <td class="mono">${e.hits||''}</td>
+      <td style="font-size:10px;color:var(--muted)">${esc(e.path||'')}</td>
+    </tr>`).join('') : '<tr><td colspan="5" style="color:var(--muted)">—</td></tr>';
+  }
+}
+async function loadCaptcha(){
+  try{
+    const r = await fetch('/api/captcha',{credentials:'same-origin'}).then(x=>x.json());
+    if(r.ok){
+      if($('#capQ')) $('#capQ').textContent = r.question;
+      if($('#admCapTok')) $('#admCapTok').value = r.token||'';
+      if($('#admCap')) $('#admCap').value = '';
+      window.__cap = {token:r.token, question:r.question};
+    }
+  }catch(e){}
+}
+async function refundOrder(id){
+  if(!confirm('Refund order '+id+' to wallet?'))return;
+  const r=await api('admin/order/refund',{method:'POST',body:JSON.stringify({order_id:id})});
+  toast(r.ok?'Refunded':' '+(r.error||'Fail'),!r.ok); if(r.ok) load();
+}
 async function confirmOrder(id){
   const r=await api('admin/order/confirm',{method:'POST',body:JSON.stringify({order_id:id})});
   toast(r.message||(r.ok?'OK':r.error),!r.ok); load();
@@ -488,7 +616,7 @@ async function loadStock(){
 }
 async function saveSettings(){
   const body={};
-  ['SITE_NAME','SITE_DESCRIPTION','GOOGLE_CLIENT_ID','KHPAY_API_KEY','KHPAY_MERCHANT_ID','KHPAY_WEBHOOK_SECRET','KHPAY_CALLBACK_URL','SITE_URL','BAKONG_ID','SHOP_NAME','SITE_TAGLINE','TELEGRAM','PAYMENT_QR','ADMIN_PASSWORD','BANNER_TITLE','BANNER_SUBTITLE','BANNER_OFF','BANNER_IMAGE','MARQUEE_TEXT'].forEach(k=>{
+  ['SITE_NAME','SITE_DESCRIPTION','GOOGLE_CLIENT_ID','KHPAY_API_KEY','KHPAY_MERCHANT_ID','KHPAY_WEBHOOK_SECRET','KHPAY_CALLBACK_URL','SITE_URL','BAKONG_ID','SHOP_NAME','SITE_TAGLINE','TELEGRAM','TELEGRAM_BOT_TOKEN','TELEGRAM_CHAT_ID','SMTP_HOST','SMTP_PORT','SMTP_USER','SMTP_PASSWORD','SMTP_FROM','PAYMENT_QR','ADMIN_PASSWORD','BANNER_TITLE','BANNER_SUBTITLE','BANNER_OFF','BANNER_IMAGE','MARQUEE_TEXT'].forEach(k=>{
     const el=$('#s_'+k); if(!el)return; if(k==='ADMIN_PASSWORD'&&!el.value)return; body[k]=el.value;
   });
   body.REQUIRE_LOGIN=$('#s_REQUIRE_LOGIN').checked;
@@ -551,6 +679,7 @@ async function restoreBackup(){
 $('#admPass')?.addEventListener('keydown',e=>{if(e.key==='Enter')doLogin()});
 api('admin/me').then(r=>{
   if(r.admin){$('#gate').classList.add('hidden');$('#app').classList.remove('hidden');load();setInterval(load,20000)}
+  else { loadCaptcha(); }
 });
 </script>
 </body>

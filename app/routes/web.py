@@ -50,6 +50,42 @@ def terms():
     return render_template("shop/terms.html", site=_site())
 
 
+@bp.get("/about")
+def about():
+    return render_template("shop/about.html", site=_site())
+
+
+@bp.get("/how-to-buy")
+def how_to_buy():
+    return render_template("shop/how_to_buy.html", site=_site())
+
+
+@bp.get("/contact")
+def contact():
+    return render_template("shop/contact.html", site=_site())
+
+
+@bp.get("/privacy")
+def privacy():
+    return render_template("shop/privacy.html", site=_site())
+
+
+@bp.get("/products")
+def products():
+    """Shiryu-style full catalog."""
+    return render_template("shop/products.html", site=_site())
+
+
+@bp.get("/login")
+def login_page():
+    return render_template("shop/login.html", site=_site())
+
+
+@bp.get("/register")
+def register_page():
+    return render_template("shop/register.html", site=_site())
+
+
 @bp.get("/product/<int:pid>")
 def product_detail(pid: int):
     """Shiryu-style product detail page."""

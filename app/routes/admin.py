@@ -38,6 +38,9 @@ def login():
         return jsonify({"ok": False, "error": "Too many attempts · locked 5 min"}), 429
 
     body = request.get_json(force=True, silent=True) or {}
+    ok_c, err_c = security.verify_captcha(body.get("captcha_token"), body.get("captcha_answer"), body.get("website"))
+    if not ok_c:
+        return jsonify({"ok": False, "error": err_c, "captcha_required": True}), 400
     pw = body.get("password") or ""
     if len(pw) > 128:
         return jsonify({"ok": False, "error": "Invalid"}), 400
@@ -46,8 +49,14 @@ def login():
     settings = data.setdefault("settings", {})
     expected = (
         settings.get("ADMIN_PASSWORD")
-        or os.environ.get("ADMIN_PASSWORD", "admin123")
+        or os.environ.get("ADMIN_PASSWORD")
+        or ""
     )
+    if not expected:
+        # Production-safe: no default password
+        if os.environ.get("FLASK_ENV") == "production" or os.environ.get("RENDER"):
+            return jsonify({"ok": False, "error": "Admin password not configured (set ADMIN_PASSWORD)"}), 503
+        expected = "admin123"  # local dev only
     if not security.verify_password(pw, expected):
         # progressive soft lock after failures tracked by rate_limit
         return jsonify({"ok": False, "error": "Wrong password"}), 401
@@ -163,6 +172,7 @@ def data():
         "storage": db.storage_info(),
         "users": _users_with_online(d)[:200],
         "online_ips": _online_ips(d),
+        "spam": security.get_spam_report(100),
         "categories": d.get("categories") or [],
         "products": d.get("products") or [],
         "orders": (d.get("orders") or [])[:100],
@@ -460,7 +470,7 @@ def settings():
     d = db.read()
     s = d.setdefault("settings", {})
     keys = [
-        "SITE_NAME", "SITE_TAGLINE", "ADMIN_PASSWORD", "SHOP_NAME", "TELEGRAM", "TELEGRAM_BOT_TOKEN", "TELEGRAM_CHAT_ID",
+        "SITE_NAME", "SITE_TAGLINE", "ADMIN_PASSWORD", "SHOP_NAME", "TELEGRAM", "TELEGRAM_BOT_TOKEN", "TELEGRAM_CHAT_ID", "SMTP_HOST", "SMTP_PORT", "SMTP_USER", "SMTP_PASSWORD", "SMTP_FROM",
         "CURRENCY", "PAYMENT_NOTE", "PAYMENT_QR", "BAKONG_ID",
         "KHMER_SECRET_KEY", "KHMER_PROFILE_KEY", "KHMER_MACHINE_ID", "KHMER_MERCHANT_NAME",
         "SITE_DESCRIPTION", "GOOGLE_CLIENT_ID", "REQUIRE_LOGIN",
@@ -491,6 +501,9 @@ def settings():
 
 # ───────────── uploads (stored in DB/disk backend, survive deploys) ─────────────
 MAX_RAW = int(os.environ.get("MAX_UPLOAD_MB", "50")) * 1_000_000   # raw upload limit (default 50 MB)
+ALLOWED_IMAGE_EXT = {".jpg", ".jpeg", ".png", ".webp", ".gif"}
+ALLOWED_IMAGE_MIME = {"image/jpeg", "image/png", "image/webp", "image/gif"}
+
 MAX_IMG = 1_500_000    # stored size target after auto-compress
 MAX_SIDE = 1600        # longest side in px
 
@@ -546,9 +559,16 @@ def _shrink(blob: bytes, mime: str, ext: str) -> tuple[bytes, str, str]:
 
 
 def _store_upload(prefix: str):
-    f = request.files.get("file")
-    if not f:
-        return None, (jsonify({"ok": False, "error": "No file"}), 400)
+    f = request.files.get("file") or request.files.get("image")
+    if f is None:
+        return None, "No file"
+    filename = secure_filename(f.filename or "") or "upload.bin"
+    ext = ("." + filename.rsplit(".", 1)[-1].lower()) if "." in filename else ""
+    if ext not in ALLOWED_IMAGE_EXT:
+        return None, "Only jpg/png/webp/gif allowed"
+    mime = (f.mimetype or "").lower()
+    if mime and mime not in ALLOWED_IMAGE_MIME:
+        return None, "Invalid image type"
     blob = f.read(MAX_RAW + 1)
     if len(blob) > MAX_RAW:
         return None, (jsonify({"ok": False, "error": "Image too large (max {} MB)".format(MAX_RAW // 1_000_000)}), 400)

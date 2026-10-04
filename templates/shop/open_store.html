@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="km">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>បើកហាង · {{ root_domain }}</title>
+<meta name="theme-color" content="#1d4ed8">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&family=Kantumruy+Pro:wght@400;600;700&display=swap" rel="stylesheet">
+<style>
+:root{--blue:#1d4ed8;--bg:#f1f5f9;--text:#0f172a;--muted:#64748b;--line:#e2e8f0;--font:'Inter','Kantumruy Pro',system-ui,sans-serif}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:var(--font);background:var(--bg);color:var(--text);min-height:100vh}
+.top{background:#fff;border-bottom:1px solid var(--line);padding:12px 16px}
+.top a{color:var(--blue);font-weight:800;text-decoration:none}
+.wrap{max-width:480px;margin:0 auto;padding:28px 16px 60px}
+h1{font-size:24px;font-weight:800;color:var(--blue);margin-bottom:8px}
+.lead{font-size:13px;color:var(--muted);margin-bottom:20px;line-height:1.5}
+.card{background:#fff;border:1px solid var(--line);border-radius:16px;padding:20px;box-shadow:0 8px 30px rgba(15,23,42,.06)}
+label{display:block;font-size:12px;font-weight:700;color:var(--muted);margin:12px 0 6px}
+input{width:100%;padding:12px 14px;border:1px solid var(--line);border-radius:12px;font:inherit}
+input:focus{outline:none;border-color:var(--blue);box-shadow:0 0 0 3px rgba(37,99,235,.12)}
+.hint{font-size:11px;color:#94a3b8;margin-top:4px}
+.preview{margin-top:10px;padding:10px 12px;background:#eff6ff;border-radius:10px;font-size:13px;font-weight:700;color:var(--blue);word-break:break-all}
+.btn{display:block;width:100%;margin-top:16px;padding:13px;border:0;border-radius:12px;background:var(--blue);color:#fff;font-weight:800;font-size:14px;cursor:pointer}
+.err{color:#dc2626;font-size:12px;margin-top:10px;min-height:18px}
+.ok{color:#16a34a;font-size:13px;margin-top:10px;font-weight:700}
+.steps{margin-top:24px;font-size:12px;color:var(--muted);line-height:1.7}
+.steps b{color:var(--text)}
+code{background:#e2e8f0;padding:1px 5px;border-radius:4px;font-size:11px}
+</style>
+</head>
+<body>
+<header class="top"><a href="/">← {{ site.name }}</a></header>
+<div class="wrap">
+  <h1>បើកហាងផ្ទាល់ខ្លួន</h1>
+  <p class="lead">Subdomain ផ្ទាល់ · website លក់ premium ដូច {{ site.name }} · បង់ KHQR</p>
+  <div class="card">
+    <label>ឈ្មោះហាង</label>
+    <input id="name" placeholder="My Premium Shop">
+    <label>Subdomain</label>
+    <input id="slug" placeholder="myshop" oninput="upd()">
+    <div class="hint">តែ a-z · 0-9 · - </div>
+    <div class="preview" id="prev">https://myshop.{{ root_domain }}</div>
+    <label>Telegram (optional)</label>
+    <input id="tg" placeholder="https://t.me/yourshop">
+    <button class="btn" type="button" onclick="reg()">បង្កើតហាង</button>
+    <div class="err" id="err"></div>
+    <div class="ok" id="ok"></div>
+  </div>
+  <div class="steps">
+    <b>បន្ទាប់ពីបង្កើត</b><br>
+    1. ចូល <code>https://slug.{{ root_domain }}/kz-panel-8391</code><br>
+    2. Login admin · ប្តូរ password<br>
+    3. បន្ថែម products · KHPAY · Google<br>
+    4. ម្ចាស់ platform: DNS <code>*.{{ root_domain }}</code> → Render
+  </div>
+</div>
+<script>
+const ROOT = {{ root_domain|tojson }};
+function upd(){
+  const s=(document.getElementById('slug').value||'myshop').toLowerCase().replace(/[^a-z0-9-]/g,'');
+  document.getElementById('prev').textContent='https://'+s+'.'+ROOT;
+}
+async function reg(){
+  const err=document.getElementById('err'), ok=document.getElementById('ok');
+  err.textContent=''; ok.textContent='';
+  const r=await fetch('/api/platform/register-tenant',{
+    method:'POST',headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({
+      slug:document.getElementById('slug').value.trim().toLowerCase(),
+      name:document.getElementById('name').value.trim(),
+      telegram:document.getElementById('tg').value.trim()
+    })
+  }).then(x=>x.json()).catch(()=>({ok:false,error:'Network'}));
+  if(!r.ok){ err.textContent=r.error||'Fail'; return; }
+  ok.innerHTML='ជោគជ័យ! <a href="'+r.url+'" target="_blank" rel="noopener">'+r.url+'</a>';
+}
+upd();
+</script>
+</body>
+</html>

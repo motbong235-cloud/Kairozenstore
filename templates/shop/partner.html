@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="km">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>បើកហាង · {{ site.name }}</title>
+<meta name="theme-color" content="#1d4ed8">
+<link rel="icon" href="{{ site.logo }}">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&family=Kantumruy+Pro:wght@400;600;700&display=swap" rel="stylesheet">
+<style>
+:root{--blue:#1d4ed8;--bg:#f1f5f9;--text:#0f172a;--muted:#64748b;--line:#e2e8f0;--card:#fff;--font:'Inter','Kantumruy Pro',system-ui,sans-serif}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:var(--font);background:var(--bg);color:var(--text);font-size:14px;line-height:1.55;min-height:100vh}
+.top{position:sticky;top:0;background:rgba(255,255,255,.94);backdrop-filter:blur(12px);border-bottom:1px solid var(--line);padding:12px 16px;display:flex;align-items:center;gap:10px}
+.top a{color:var(--blue);font-weight:800;text-decoration:none;display:flex;align-items:center;gap:8px}
+.top img{width:32px;height:32px;border-radius:9px}
+.wrap{max-width:520px;margin:0 auto;padding:24px 16px 60px}
+h1{font-size:24px;font-weight:800;color:var(--blue);margin-bottom:8px}
+.lead{color:var(--muted);margin-bottom:20px;font-size:13px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:20px;box-shadow:0 8px 28px rgba(15,23,42,.06)}
+.price{font-size:32px;font-weight:800;color:var(--blue);margin:8px 0 4px}
+.price span{font-size:14px;font-weight:600;color:var(--muted)}
+.feat{margin:14px 0 18px;padding:0;list-style:none}
+.feat li{padding:8px 0;border-bottom:1px solid var(--line);font-size:13px;color:var(--muted)}
+.feat li:last-child{border:0}
+.feat b{color:var(--text)}
+.field{margin-bottom:12px}
+.field label{display:block;font-size:12px;font-weight:700;color:var(--muted);margin-bottom:6px}
+.field input{width:100%;padding:12px 14px;border-radius:12px;border:1px solid var(--line);font:inherit}
+.field input:focus{outline:none;border-color:var(--blue);box-shadow:0 0 0 3px rgba(37,99,235,.12)}
+.hint{font-size:11px;color:var(--muted);margin-top:4px}
+.btn{width:100%;padding:14px;border:0;border-radius:12px;background:var(--blue);color:#fff;font-weight:800;font-size:15px;cursor:pointer;margin-top:8px}
+.btn:disabled{opacity:.6}
+.sub{font-size:12px;color:var(--muted);text-align:center;margin-top:12px}
+.err{color:#dc2626;font-size:13px;margin-top:8px;display:none}
+.okbox{display:none;margin-top:16px;padding:14px;background:#f0fdf4;border:1px solid #bbf7d0;border-radius:12px;font-size:13px}
+.preview{font-family:ui-monospace,monospace;font-size:12px;background:#0f172a;color:#93c5fd;padding:10px 12px;border-radius:10px;margin-top:8px;word-break:break-all}
+</style>
+</head>
+<body>
+<header class="top"><a href="/"><img src="{{ site.logo }}" alt="">{{ site.name }}</a></header>
+<div class="wrap">
+  <h1>បើកហាងផ្ទាល់ខ្លួន</h1>
+  <p class="lead">បាន subdomain + website ដូចគ្នា · តម្លៃ <b>${{ price }}</b> ម្ដង</p>
+  <div class="card">
+    <div class="price">${{ price }} <span>/ setup</span></div>
+    <ul class="feat">
+      <li><b>Subdomain</b> — yourname.{{ base_domain or 'yourdomain.com' }}</li>
+      <li><b>Store ដូចគ្នា</b> — products · KHQR · Google login · Profile</li>
+      <li><b>Admin panel</b> — គ្រប់គ្រង stock ផ្ទាល់</li>
+      <li><b>Instant</b> — បង់រួច activate</li>
+    </ul>
+    <div class="field">
+      <label>ឈ្មោះហាង</label>
+      <input id="shop" placeholder="My Premium Store">
+    </div>
+    <div class="field">
+      <label>Subdomain (slug)</label>
+      <input id="slug" placeholder="mystore" pattern="[a-z0-9-]+" oninput="preview()">
+      <div class="hint">តែ a-z · 0-9 · -</div>
+      <div class="preview" id="prev">https://—.{{ base_domain or 'yourdomain.com' }}</div>
+    </div>
+    <div class="field">
+      <label>Email</label>
+      <input id="email" type="email" placeholder="you@gmail.com">
+    </div>
+    <button class="btn" type="button" id="btn" onclick="start()">បង់ ${{ price }} · បើកហាង</button>
+    <div class="err" id="err"></div>
+    <div class="okbox" id="okbox"></div>
+    <p class="sub">បង់តាម KHQR (KHPAY) · បន្ទាប់ពី paid subdomain នឹងដំណើរការ</p>
+  </div>
+</div>
+<script>
+const BASE_DOMAIN = {{ (base_domain or '')|tojson }};
+const PRICE = {{ price }};
+function preview(){
+  const s = (document.getElementById('slug').value||'').toLowerCase().replace(/[^a-z0-9-]/g,'').replace(/-+/g,'-');
+  document.getElementById('prev').textContent = 'https://'+(s||'—')+'.'+(BASE_DOMAIN||'yourdomain.com');
+}
+async function start(){
+  const err = document.getElementById('err');
+  err.style.display='none';
+  const body = {
+    shop_name: document.getElementById('shop').value.trim(),
+    slug: document.getElementById('slug').value.trim(),
+    email: document.getElementById('email').value.trim(),
+  };
+  document.getElementById('btn').disabled = true;
+  try{
+    const r = await fetch('/api/partner/register',{method:'POST',headers:{'Content-Type':'application/json'},credentials:'same-origin',body:JSON.stringify(body)}).then(x=>x.json());
+    if(!r.ok){ err.textContent=r.error||'Fail'; err.style.display='block'; document.getElementById('btn').disabled=false; return; }
+    const box = document.getElementById('okbox');
+    box.style.display='block';
+    let html = '<b>Order '+r.order_id+'</b><br>តម្លៃ $'+Number(r.price).toFixed(2)+'<br>';
+    if(r.payment && r.payment.qr){
+      html += '<img src="'+r.payment.qr+'" alt="QR" style="width:100%;max-width:260px;margin:12px auto;display:block;border-radius:12px">';
+      if(r.payment.aba_deeplink) html += '<p style="text-align:center"><a href="'+r.payment.aba_deeplink+'" style="color:#1d4ed8;font-weight:700">Open ABA</a></p>';
+    } else {
+      html += (r.message||'រង់ចាំ admin confirm បន្ទាប់ពីបង់')+'<br>';
+    }
+    html += '<p style="margin-top:10px">Subdomain: <code>'+r.subdomain+'</code></p>';
+    box.innerHTML = html;
+    if(r.order_id){
+      const t = setInterval(async()=>{
+        const c = await fetch('/api/partner/check',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({order_id:r.order_id,slug:body.slug})}).then(x=>x.json()).catch(()=>({}));
+        if(c.status==='active'||c.paid){
+          clearInterval(t);
+          box.innerHTML += '<p style="color:#16a34a;font-weight:800;margin-top:8px">✓ Active! <a href="https://'+body.slug+'.'+BASE_DOMAIN+'">បើកហាង</a></p>';
+        }
+      },4000);
+    }
+  }catch(e){
+    err.textContent='Network error'; err.style.display='block';
+    document.getElementById('btn').disabled=false;
+  }
+}
+preview();
+</script>
+</body>
+</html>

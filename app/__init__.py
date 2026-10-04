@@ -52,17 +52,51 @@ def create_app(config_class=Config) -> Flask:
     def _sec_headers(resp):
         return apply_security_headers(resp)
 
-    # Block noisy probe paths quickly
     @app.before_request
-    def _block_probes():
-        from flask import request, abort
-        path = (request.path or "").lower()
-        blocked = (
-            "/wp-admin", "/wp-login", "/.env", "/xmlrpc.php",
-            "/phpmyadmin", "/.git", "/vendor/phpunit",
-        )
-        if any(path.startswith(b) for b in blocked):
+    def _security_gate():
+        from flask import request, abort, jsonify, session
+        from app import security as sec
+        path = request.path or ""
+
+        # 1) Block scanner probes
+        if sec.is_probe_path(path):
             abort(404)
+
+        # 2) Global API rate limit (per IP)
+        if path.startswith("/api/"):
+            # webhooks need higher allowance
+            if path.startswith("/api/webhook/"):
+                if not sec.rate_limit("webhook", limit=120, window_sec=60):
+                    return jsonify({"ok": False, "error": "Too many requests"}), 429
+            elif path.startswith("/api/auth/heartbeat"):
+                if not sec.rate_limit("hb", limit=30, window_sec=60):
+                    return jsonify({"ok": True, "throttled": True})
+            elif path.startswith("/api/admin/"):
+                if not sec.rate_limit("admin_api", limit=90, window_sec=60):
+                    return jsonify({"ok": False, "error": "Too many requests"}), 429
+            else:
+                if not sec.rate_limit("api", limit=120, window_sec=60):
+                    return jsonify({"ok": False, "error": "Too many requests"}), 429
+
+        # 3) Method hardening
+        if request.method not in ("GET", "HEAD", "POST", "PUT", "DELETE", "OPTIONS"):
+            abort(405)
+
+        # 4) Reject oversized JSON content-type tricks on write methods
+        if request.method in ("POST", "PUT", "PATCH", "DELETE"):
+            cl = request.content_length or 0
+            if cl > 25 * 1024 * 1024:  # hard ceiling before Flask MAX
+                abort(413)
+
+        return None
+
+    # Session cookie hardening
+    app.config.setdefault("SESSION_COOKIE_HTTPONLY", True)
+    app.config.setdefault("SESSION_COOKIE_SAMESITE", "Lax")
+    if os.environ.get("SESSION_COOKIE_SECURE", "1") not in ("0", "false", "False"):
+        app.config.setdefault("SESSION_COOKIE_SECURE", True)
+    app.config.setdefault("PERMANENT_SESSION_LIFETIME", 60 * 60 * 24 * 14)  # 14 days
+
 
 
     @app.errorhandler(413)

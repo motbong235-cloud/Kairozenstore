@@ -143,3 +143,14 @@ Used for:
 - Lockouts
 
 If unset, falls back to in-memory (single process).
+
+
+## Partner stores (subdomain · $25)
+
+1. Set env:
+   - `BASE_DOMAIN=kairozen.store` (or your domain without www)
+   - `TENANT_PRICE=25`
+2. DNS: `*` CNAME → Render (wildcard subdomain)
+3. Render: add `*.yourdomain.com` if supported, or add each subdomain
+4. Signup: `https://yourdomain.com/partner`
+5. Admin → **Stores $25** → Activate if needed

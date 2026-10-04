@@ -283,7 +283,24 @@ th{color:var(--muted);font-size:10px;text-transform:uppercase}
       </div>
       <div id="bannerPrevWrap" style="margin-top:8px;display:none">
         <img id="bannerPrev" alt="banner" style="max-width:100%;max-height:140px;border-radius:12px;border:1px solid var(--line);object-fit:cover">
-        <div style="margin-top:6px"><button class="btn btn-ghost" type="button" onclick="clearBanner()">លុប banner image</button></div>
+        <div style="margin-top:6px"><button class="btn btn-ghost" type="button" onclick="clearBanner()">លុប banner មេ</button></div>
+      </div>
+      <div class="ks" style="margin-top:12px">
+        <h4>Banners ច្រើន (Carousel)</h4>
+        <p class="help">Upload បន្ថែម → រូបវិលលើហាង។ លុបមួយៗបាន។</p>
+        <input type="file" id="bannerFileMulti" accept="image/png,image/jpeg,image/webp,image/gif" onchange="uploadBannerMulti()">
+        <div id="bannerList" style="display:grid;gap:8px;margin-top:10px"></div>
+        <input type="hidden" id="s_BANNER_IMAGES" value="[]">
+      </div>
+      <div class="ks" style="margin-top:12px;background:#f8fafc">
+        <h4>Footer (Shiryu style)</h4>
+        <div class="field"><label>About text</label><textarea id="s_FOOTER_ABOUT" rows="3" placeholder="ផ្តល់សេវាកម្ម Digital Products..."></textarea></div>
+        <div class="field"><label>Support email</label><input id="s_FOOTER_EMAIL" placeholder="support@kairozen.store"></div>
+        <div class="field"><label>Address</label><input id="s_FOOTER_ADDRESS" placeholder="Cambodia, Phnom Penh"></div>
+        <div class="field"><label>Facebook URL</label><input id="s_SOCIAL_FACEBOOK" placeholder="https://facebook.com/..."></div>
+        <div class="field"><label>Telegram URL</label><input id="s_SOCIAL_TELEGRAM" placeholder="https://t.me/..."></div>
+        <div class="field"><label>TikTok URL</label><input id="s_SOCIAL_TIKTOK" placeholder="https://tiktok.com/@..."></div>
+        <div class="field"><label>YouTube URL</label><input id="s_SOCIAL_YOUTUBE" placeholder="https://youtube.com/..."></div>
       </div>
 
       <div class="field"><label>Marquee text (top blue bar)</label><input id="s_MARQUEE_TEXT" placeholder="Flash Sale · CapCut · Netflix · Instant delivery"></div>
@@ -417,10 +434,18 @@ async function load(){
   const set=r.settings||{};
   $('#s_REQUIRE_LOGIN').checked=!!set.REQUIRE_LOGIN;
   $('#origin').textContent=location.origin;
-  ['SITE_NAME','SITE_DESCRIPTION','GOOGLE_CLIENT_ID','KHPAY_API_KEY','KHPAY_MERCHANT_ID','KHPAY_WEBHOOK_SECRET','KHPAY_CALLBACK_URL','SITE_URL','BAKONG_ID','SHOP_NAME','SITE_TAGLINE','TELEGRAM','TELEGRAM_BOT_TOKEN','TELEGRAM_CHAT_ID','SMTP_HOST','SMTP_PORT','SMTP_USER','SMTP_PASSWORD','SMTP_FROM','PAYMENT_QR','BANNER_TITLE','BANNER_SUBTITLE','BANNER_OFF','BANNER_IMAGE','MARQUEE_TEXT'].forEach(k=>{
+  ['SITE_NAME','SITE_DESCRIPTION','GOOGLE_CLIENT_ID','KHPAY_API_KEY','KHPAY_MERCHANT_ID','KHPAY_WEBHOOK_SECRET','KHPAY_CALLBACK_URL','SITE_URL','BAKONG_ID','SHOP_NAME','SITE_TAGLINE','TELEGRAM','TELEGRAM_BOT_TOKEN','TELEGRAM_CHAT_ID','SMTP_HOST','SMTP_PORT','SMTP_USER','SMTP_PASSWORD','SMTP_FROM','PAYMENT_QR','BANNER_TITLE','BANNER_SUBTITLE','BANNER_OFF','BANNER_IMAGE','BANNER_IMAGES','FOOTER_ABOUT','FOOTER_EMAIL','FOOTER_ADDRESS','SOCIAL_FACEBOOK','SOCIAL_TELEGRAM','SOCIAL_TIKTOK','SOCIAL_YOUTUBE','MARQUEE_TEXT'].forEach(k=>{
     const el=$('#s_'+k); if(el) el.value=set[k]??'';
   });
   if($('#s_BANNER_IMAGE')?.value) showBannerPrev($('#s_BANNER_IMAGE').value);
+  try{
+    let imgs = S.BANNER_IMAGES;
+    if(typeof imgs==='string') imgs = JSON.parse(imgs||'[]');
+    if(!Array.isArray(imgs)) imgs = [];
+    if($('#s_BANNER_IMAGES')) $('#s_BANNER_IMAGES').value = JSON.stringify(imgs);
+    renderBannerList(imgs);
+  }catch(e){ renderBannerList([]); }
+
   $('#s_ADMIN_PASSWORD').value='';
 }
 
@@ -616,7 +641,8 @@ async function loadStock(){
 }
 async function saveSettings(){
   const body={};
-  ['SITE_NAME','SITE_DESCRIPTION','GOOGLE_CLIENT_ID','KHPAY_API_KEY','KHPAY_MERCHANT_ID','KHPAY_WEBHOOK_SECRET','KHPAY_CALLBACK_URL','SITE_URL','BAKONG_ID','SHOP_NAME','SITE_TAGLINE','TELEGRAM','TELEGRAM_BOT_TOKEN','TELEGRAM_CHAT_ID','SMTP_HOST','SMTP_PORT','SMTP_USER','SMTP_PASSWORD','SMTP_FROM','PAYMENT_QR','ADMIN_PASSWORD','BANNER_TITLE','BANNER_SUBTITLE','BANNER_OFF','BANNER_IMAGE','MARQUEE_TEXT'].forEach(k=>{
+  try{ body.BANNER_IMAGES=getBannerImages(); }catch(e){ body.BANNER_IMAGES=[]; }
+  ['SITE_NAME','SITE_DESCRIPTION','GOOGLE_CLIENT_ID','KHPAY_API_KEY','KHPAY_MERCHANT_ID','KHPAY_WEBHOOK_SECRET','KHPAY_CALLBACK_URL','SITE_URL','BAKONG_ID','SHOP_NAME','SITE_TAGLINE','TELEGRAM','TELEGRAM_BOT_TOKEN','TELEGRAM_CHAT_ID','SMTP_HOST','SMTP_PORT','SMTP_USER','SMTP_PASSWORD','SMTP_FROM','PAYMENT_QR','ADMIN_PASSWORD','BANNER_TITLE','BANNER_SUBTITLE','BANNER_OFF','BANNER_IMAGE','FOOTER_ABOUT','FOOTER_EMAIL','FOOTER_ADDRESS','SOCIAL_FACEBOOK','SOCIAL_TELEGRAM','SOCIAL_TIKTOK','SOCIAL_YOUTUBE','MARQUEE_TEXT'].forEach(k=>{
     const el=$('#s_'+k); if(!el)return; if(k==='ADMIN_PASSWORD'&&!el.value)return; body[k]=el.value;
   });
   body.REQUIRE_LOGIN=$('#s_REQUIRE_LOGIN').checked;
@@ -629,6 +655,39 @@ function refreshLogo(v){
   document.querySelectorAll('link[rel~=icon]').forEach(l=>l.href=u);
 }
 
+function getBannerImages(){
+  try{ const v=$('#s_BANNER_IMAGES')?.value||'[]'; const a=JSON.parse(v); return Array.isArray(a)?a:[]; }catch(e){ return []; }
+}
+function renderBannerList(imgs){
+  const host=$('#bannerList'); if(!host) return;
+  if(!imgs.length){ host.innerHTML='<div class="help">មិនទាន់មាន banner បន្ថែម</div>'; return; }
+  host.innerHTML=imgs.map((url,i)=>`<div style="display:flex;gap:8px;align-items:center;border:1px solid var(--line);border-radius:10px;padding:6px;background:#fff">
+    <img src="${esc(url)}" style="width:72px;height:40px;object-fit:cover;border-radius:6px">
+    <span class="mono" style="flex:1;font-size:10px;overflow:hidden;text-overflow:ellipsis">${esc(url)}</span>
+    <button class="btn btn-r" type="button" style="padding:4px 8px;font-size:11px" onclick="removeBannerAt(${i})">លុប</button>
+  </div>`).join('');
+}
+async function removeBannerAt(i){
+  const imgs=getBannerImages(); imgs.splice(i,1);
+  if($('#s_BANNER_IMAGES')) $('#s_BANNER_IMAGES').value=JSON.stringify(imgs);
+  renderBannerList(imgs);
+  await api('admin/settings',{method:'PUT',body:JSON.stringify({BANNER_IMAGES:imgs})});
+  toast('លុប banner');
+}
+async function uploadBannerMulti(){
+  const f=$('#bannerFileMulti')?.files?.[0];
+  if(!f){ toast('ជ្រើសរូប',true); return; }
+  const fd=new FormData(); fd.append('file',f);
+  const r=await fetch('/api/admin/upload-image',{method:'POST',body:fd,credentials:'same-origin'}).then(x=>x.json()).catch(()=>({}));
+  if(!r.ok){ toast(r.error||'Upload fail',true); return; }
+  const url=r.url||r.path||r.name;
+  const imgs=getBannerImages(); imgs.push(url);
+  if($('#s_BANNER_IMAGES')) $('#s_BANNER_IMAGES').value=JSON.stringify(imgs);
+  renderBannerList(imgs);
+  await api('admin/settings',{method:'PUT',body:JSON.stringify({BANNER_IMAGES:imgs})});
+  if($('#bannerFileMulti')) $('#bannerFileMulti').value='';
+  toast('បន្ថែម banner');
+}
 async function uploadBanner(){
   const f = $('#bannerFile')?.files?.[0];
   if(!f){ toast('ជ្រើសរើសរូប banner សិន', true); return; }

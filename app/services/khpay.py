@@ -29,7 +29,7 @@ def _request(
         "Authorization": f"Bearer {api_key.strip()}",
         "Content-Type": "application/json",
         "Accept": "application/json",
-        "User-Agent": "KairozenStore/1.0",
+        "User-Agent": "Kairozen StoreStore/1.0",
     }
     data = None
     if body is not None:

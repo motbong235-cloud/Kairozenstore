@@ -131,3 +131,15 @@ All pages load Khmer fonts in 3 layers (see `templates/_fonts.html`):
 
 To self-host: download a Khmer font from fonts.google.com (e.g. *Kantumruy Pro* or *Noto Sans Khmer*),
 convert to `.woff2` and save it as `static/fonts/khmer.woff2`. It is picked up automatically (no code change).
+
+
+## Redis (optional)
+
+Set env `REDIS_URL` (Render Key Value / Redis).
+
+Used for:
+- Rate limiting (multi-instance safe)
+- Spam IP tracking (Admin → Spam / IP)
+- Lockouts
+
+If unset, falls back to in-memory (single process).

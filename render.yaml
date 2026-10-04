@@ -20,3 +20,6 @@ services:
         value: kz-panel-8391
       - key: GOOGLE_CLIENT_ID
         sync: false
+
+# Optional: add Render Redis and set env REDIS_URL=redis://...
+# Rate-limit + spam IP tracking will use Redis automatically.

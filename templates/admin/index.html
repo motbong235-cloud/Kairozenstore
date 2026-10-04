@@ -75,7 +75,7 @@ th{color:var(--muted);font-size:10px;text-transform:uppercase}
 <div class="gate" id="gate">
   <div class="gate-box">
     <img src="{{ site.logo }}" alt="" onerror="this.style.display='none'">
-    <h2>Kairozen Admin</h2>
+    <h2>Kairozen Store Admin</h2>
     <p>Orders · Products · Stock · Payment</p>
     <div class="field" style="text-align:left"><label>Password</label><input id="admPass" type="password"></div>
     <div class="field" style="text-align:left" id="captchaBox">
@@ -92,7 +92,7 @@ th{color:var(--muted);font-size:10px;text-transform:uppercase}
 <div class="wrap hidden" id="app">
   <div class="top">
     <img id="topLogo" src="{{ site.logo }}" alt="" onerror="this.style.opacity=0">
-    <h1>Kairozen Admin</h1>
+    <h1>Kairozen Store Admin</h1>
     <div class="sp"></div>
     <a class="btn btn-ghost" href="/" target="_blank">Store</a>
     <button class="btn btn-ghost" type="button" onclick="doLogout()">Logout</button>
@@ -106,6 +106,7 @@ th{color:var(--muted);font-size:10px;text-transform:uppercase}
     <button class="tab" data-t="users" onclick="tab('users')">Users</button>
     <button class="tab" data-t="tools" onclick="tab('tools')">Tools</button>
     <button class="tab" data-t="spam" onclick="tab('spam')">Spam / IP</button>
+    <button class="tab" data-t="tenants" onclick="tab('tenants')">Stores $25</button>
     <button class="tab" data-t="settings" onclick="tab('settings')">Settings</button>
   </div>
 
@@ -230,6 +231,17 @@ th{color:var(--muted);font-size:10px;text-transform:uppercase}
     </div>
   </div>
 
+  <div id="t-tenants" class="card hidden">
+    <h3>Partner Stores · $25</h3>
+    <p class="help">Subdomain stores · Env <code>BASE_DOMAIN</code> · <code>TENANT_PRICE</code></p>
+    <div class="row" style="margin-bottom:10px"><button class="btn btn-ghost" type="button" onclick="loadTenants()">Refresh</button>
+      <span id="tenMeta" class="help"></span></div>
+    <div style="overflow-x:auto"><table>
+      <thead><tr><th>Slug</th><th>Shop</th><th>Status</th><th>Email</th><th></th></tr></thead>
+      <tbody id="tenRows"></tbody>
+    </table></div>
+    <p class="help" style="margin-top:10px">Signup page: <a href="/partner" target="_blank">/partner</a></p>
+  </div>
   <div id="t-settings" class="card hidden">
     <h3>Settings</h3>
     <div class="ks" style="background:#f8fafc;border-color:var(--line)">
@@ -362,7 +374,7 @@ async function doLogin(){
 async function doLogout(){await api('admin/logout',{method:'POST'});location.reload()}
 function tab(n){
   document.querySelectorAll('.tab').forEach(t=>t.classList.toggle('on',t.dataset.t===n));
-  ['orders','products','stock','users','tools','spam','settings'].forEach(x=>$('#t-'+x)?.classList.toggle('hidden',x!==n));
+  ['orders','products','stock','users','tools','spam','tenants','settings'].forEach(x=>$('#t-'+x)?.classList.toggle('hidden',x!==n));
 }
 
 let DATA={};
@@ -525,6 +537,26 @@ function renderUserRows(list){
 
 function filterUsers(){ renderUserRows(USER_LIST); }
 
+async function loadTenants(){
+  const r = await api('admin/tenants');
+  if(!r.ok){ toast(r.error||'Fail',true); return; }
+  if($('#tenMeta')) $('#tenMeta').textContent = 'Price $'+(r.price||25)+' · domain '+(r.base_domain||'—');
+  const rows = r.tenants||[];
+  if($('#tenRows')){
+    $('#tenRows').innerHTML = rows.length ? rows.map(t=>`<tr>
+      <td class="mono"><b>${esc(t.slug)}</b></td>
+      <td>${esc(t.shop_name||'')}</td>
+      <td><span class="badge ${t.status==='active'?'on':'off'}">${esc(t.status)}</span></td>
+      <td class="mono" style="font-size:11px">${esc(t.email||'')}</td>
+      <td>${t.status!=='active'?`<button class="btn btn-g" style="padding:4px 10px;font-size:11px" onclick="activateTen('${esc(t.slug)}')">Activate</button>`: (t.subdomain?`<a href="https://${esc(t.subdomain)}" target="_blank">Open</a>`:'')}</td>
+    </tr>`).join('') : '<tr><td colspan="5" style="color:var(--muted)">No partner stores yet</td></tr>';
+  }
+}
+async function activateTen(slug){
+  if(!confirm('Activate '+slug+'?'))return;
+  const r = await api('admin/tenants/activate',{method:'POST',body:JSON.stringify({slug})});
+  toast(r.ok?'Activated':(r.error||'Fail'),!r.ok); if(r.ok) loadTenants();
+}
 function renderSpam(spam){
   const by = spam.by_ip || [];
   const el = $('#spamIpRows');

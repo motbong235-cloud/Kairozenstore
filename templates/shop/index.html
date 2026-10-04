@@ -968,6 +968,82 @@ body{
 
 footer.foot a{color:var(--blue2);font-weight:600}
 
+
+/* multi banner carousel */
+.banner-carousel{position:relative;margin:10px 14px 12px;border-radius:16px;overflow:hidden;background:#0f172a}
+.banner-carousel .slides{display:flex;transition:transform .45s cubic-bezier(.22,1,.36,1)}
+.banner-carousel .slide{min-width:100%;aspect-ratio:2.4/1;background:#0f172a}
+.banner-carousel .slide img{width:100%;height:100%;object-fit:cover;display:block}
+.banner-carousel .dots{position:absolute;left:0;right:0;bottom:8px;display:flex;gap:6px;justify-content:center}
+.banner-carousel .dots button{width:7px;height:7px;border-radius:50%;border:0;background:rgba(255,255,255,.4);padding:0;cursor:pointer}
+.banner-carousel .dots button.on{background:#fff;width:18px;border-radius:99px}
+.banner-carousel .navb{position:absolute;top:50%;transform:translateY(-50%);width:32px;height:32px;border-radius:50%;border:0;background:rgba(15,23,42,.45);color:#fff;font-size:16px;cursor:pointer}
+.banner-carousel .navb.prev{left:8px}
+.banner-carousel .navb.next{right:8px}
+@media(min-width:720px){.banner-carousel{max-width:952px;margin-left:auto;margin-right:auto}}
+
+/* Shiryu-style footer — under products, mobile stacked like shiryupremium */
+.site-footer{
+  background:#f1f5f9;
+  border-top:1px solid #e2e8f0;
+  padding:28px 18px 120px;
+  margin-top:8px;
+  width:100%;
+  clear:both;
+}
+.sf-wrap{
+  max-width:720px;
+  margin:0 auto;
+  display:flex;
+  flex-direction:column;
+  gap:26px;
+  text-align:left;
+}
+.sf-col h4{
+  font-size:14px;font-weight:800;color:#1d4ed8;
+  margin-bottom:12px;
+  display:flex;align-items:center;gap:8px;
+  letter-spacing:.01em;
+}
+.sf-col h4::before{
+  content:"";width:3px;height:16px;background:#1d4ed8;border-radius:2px;flex-shrink:0;
+}
+.sf-col p{
+  font-size:13px;color:#64748b;line-height:1.65;margin:0 0 12px;
+}
+.sf-col a{
+  font-size:13px;color:#64748b;line-height:1.7;text-decoration:none;
+  display:block;margin-bottom:4px;padding:2px 0;
+}
+.sf-col a:hover{color:#1d4ed8}
+.sf-social{display:flex;gap:10px;margin-top:4px;flex-wrap:wrap}
+.sf-social a{
+  width:40px;height:40px;border-radius:12px;background:#1d4ed8;color:#fff;
+  display:grid;place-items:center;margin:0;padding:0;
+}
+.sf-social a svg{width:18px;height:18px;fill:currentColor}
+.sf-contact-row{display:flex;align-items:flex-start;gap:8px;margin-bottom:8px;font-size:13px;color:#64748b}
+.sf-contact-row svg{width:16px;height:16px;flex-shrink:0;margin-top:2px;stroke:#1d4ed8;fill:none;stroke-width:2}
+.sf-pay{display:flex;gap:10px;margin-top:8px;flex-wrap:wrap;align-items:center}
+.pay-logo{
+  height:40px;width:auto;border-radius:8px;
+  box-shadow:0 2px 8px rgba(15,23,42,.12);
+  display:block;
+}
+.sf-pay span{padding:7px 12px;border-radius:8px;font-size:12px;font-weight:800;color:#fff}
+.sf-pay span{padding:7px 12px;border-radius:8px;font-size:12px;font-weight:800;color:#fff;letter-spacing:.02em}
+.sf-pay .aba{background:#0055a5}
+.sf-pay .khqr{background:#dc2626}
+.sf-bottom{
+  max-width:720px;margin:8px auto 0;padding-top:18px;
+  border-top:1px solid #e2e8f0;text-align:center;font-size:11px;color:#94a3b8;line-height:1.7;
+}
+.sf-bottom a{color:#64748b;margin:0 8px;font-weight:500;text-decoration:none}
+.sf-bottom a:hover{color:#1d4ed8}
+@media(min-width:720px){
+  .sf-wrap{max-width:960px;display:grid;grid-template-columns:1.3fr 1fr 1fr;gap:32px}
+  .site-footer{padding:36px 24px 48px}
+}
 </style>
 {% include '_fonts.html' %}
 </head>
@@ -995,6 +1071,12 @@ footer.foot a{color:var(--blue2);font-weight:600}
 </header>
 <div id="uMenuHost"></div>
 
+<div class="banner-carousel hidden" id="bannerCarousel" aria-label="Banners">
+  <div class="slides" id="bannerSlides"></div>
+  <button type="button" class="navb prev" onclick="bannerNav(-1)" aria-label="Prev">‹</button>
+  <button type="button" class="navb next" onclick="bannerNav(1)" aria-label="Next">›</button>
+  <div class="dots" id="bannerDots"></div>
+</div>
 <div class="promo" id="promoBox">
   <div class="promo-text">
     <div class="off" id="promoOffWrap">OFF<br><b id="promoOff">10%</b></div>
@@ -1038,8 +1120,55 @@ footer.foot a{color:var(--blue2);font-weight:600}
     </div>
   </div>
 </section>
-<div class="grid" id="grid"><div class="skel"></div><div class="skel"></div><div class="skel"></div><div class="skel"></div></div>
-<footer class="foot">© {{ site.name }} · <a href="/products">Products</a> · <a href="/login">Login</a> · <a href="/about">About</a> · <a href="/how-to-buy">របៀបទិញ</a> · <a href="/contact">Contact</a> · <a href="/faq">FAQ</a> · <a href="/terms">Terms</a> · <a href="/privacy">Privacy</a></footer>
+<section class="section" style="padding-bottom:4px">
+  <div class="grid" id="grid"><div class="skel"></div><div class="skel"></div><div class="skel"></div><div class="skel"></div></div>
+</section>
+<!-- Footer under products — Shiryu layout -->
+<footer class="site-footer" id="siteFooter">
+  <div class="sf-wrap">
+    <div class="sf-col">
+      <h4>អំពី {{ site.name }}</h4>
+      <p id="sfAbout">ផ្តល់សេវាកម្ម Digital Products និង Premium Subscriptions គុណភាពខ្ពស់ ដូចជា Netflix, Spotify, YouTube Premium, Canva Pro និងសេវាកម្មអនឡាញផ្សេងៗ ក្នុងតម្លៃសមរម្យ ទិញងាយ រហ័ស និងមានការគាំទ្រពីក្រុមការងារជានិច្ច</p>
+      <div class="sf-social" id="sfSocial"></div>
+    </div>
+    <div class="sf-col">
+      <h4>សេវាកម្ម</h4>
+      <a href="/">ទំព័រដើម</a>
+      <a href="/products">ផលិតផល</a>
+      <a href="/how-to-buy">របៀបទិញ</a>
+      <a href="/profile">គណនីរបស់ខ្ញុំ</a>
+      <a href="/faq">បញ្ហាទូទៅ</a>
+    </div>
+    <div class="sf-col">
+      <h4>ជំនួយ</h4>
+      <a href="/contact">ទំនាក់ទំនង</a>
+      <a href="/how-to-buy">របៀបទិញ</a>
+      <a href="/faq">សំណួរញឹកញាប់</a>
+      <a href="/terms">លក្ខខណ្ឌប្រើប្រាស់</a>
+      <a href="/privacy">សិទ្ធិឯកជន</a>
+      <h4 style="margin-top:22px">ទំនាក់ទំនង</h4>
+      <div class="sf-contact-row">
+        <svg viewBox="0 0 24 24"><path d="M4 6h16v12H4z"/><path d="M4 6l8 7 8-7"/></svg>
+        <a id="sfEmail" href="mailto:support@kairozen.store">support@kairozen.store</a>
+      </div>
+      <div class="sf-contact-row">
+        <svg viewBox="0 0 24 24"><path d="M12 21s7-5.2 7-11a7 7 0 10-14 0c0 5.8 7 11 7 11z"/><circle cx="12" cy="10" r="2.5"/></svg>
+        <span id="sfAddr">Cambodia, Phnom Penh</span>
+      </div>
+      <h4 style="margin-top:22px">WE ACCEPT</h4>
+      <div class="sf-pay" aria-label="Payment methods">
+        <img class="pay-logo" src="/static/pay-aba.svg" alt="ABA" width="80" height="40">
+        <img class="pay-logo" src="/static/pay-khqr.svg" alt="KHQR" width="80" height="40">
+      </div>
+    </div>
+  </div>
+  <div class="sf-bottom">
+    Copyright © <span id="sfYear">2026</span> {{ site.name }}. All Rights Reserved.<br>
+    <a href="/privacy">Privacy Policy</a>
+    <a href="/terms">Terms of Service</a>
+    <a href="/faq">Cookies</a>
+  </div>
+</footer>
 
 <nav class="bottom">
   <button type="button" class="on" onclick="window.scrollTo({top:0,behavior:'smooth'})">
@@ -1070,6 +1199,72 @@ let CAT = 'all';
 let POLL = null;
 let USER = null;
 let QRY = '';
+
+let __bannerIdx = 0, __bannerTimer = null, __bannerImgs = [];
+function setupBanners(s){
+  let imgs = s.BANNER_IMAGES;
+  if(typeof imgs==='string'){ try{ imgs=JSON.parse(imgs);}catch(e){ imgs=[]; } }
+  if(!Array.isArray(imgs)) imgs=[];
+  imgs = imgs.filter(Boolean);
+  // include single BANNER_IMAGE if set and not in list
+  if(s.BANNER_IMAGE && !imgs.includes(s.BANNER_IMAGE)) imgs = [s.BANNER_IMAGE, ...imgs];
+  __bannerImgs = imgs;
+  const car = $('#bannerCarousel'), promo = $('#promoBox');
+  if(imgs.length >= 1){
+    if(car){
+      car.classList.remove('hidden');
+      const slides = $('#bannerSlides');
+      slides.innerHTML = imgs.map(u=>`<div class="slide"><img src="${esc(u)}" alt="Banner" loading="lazy"></div>`).join('');
+      const dots = $('#bannerDots');
+      dots.innerHTML = imgs.map((_,i)=>`<button type="button" class="${i===0?'on':''}" onclick="bannerGo(${i})"></button>`).join('');
+      __bannerIdx = 0;
+      slides.style.transform = 'translateX(0)';
+      if(__bannerTimer) clearInterval(__bannerTimer);
+      if(imgs.length > 1){
+        __bannerTimer = setInterval(()=>bannerNav(1), 4500);
+      }
+    }
+    // hide text promo when we have image banners
+    if(promo) promo.classList.add('hidden');
+  } else {
+    if(car) car.classList.add('hidden');
+    if(promo) promo.classList.remove('hidden');
+  }
+  // legacy single image path
+  if(!imgs.length && s.BANNER_IMAGE){
+    const wrap=$('#promoImgWrap'), img=$('#promoImg');
+    if(wrap&&img){ img.src=s.BANNER_IMAGE; wrap.classList.remove('hidden'); promo&&promo.classList.add('img-only'); }
+  }
+}
+function bannerGo(i){
+  if(!__bannerImgs.length) return;
+  __bannerIdx = (i + __bannerImgs.length) % __bannerImgs.length;
+  const slides = $('#bannerSlides');
+  if(slides) slides.style.transform = `translateX(-${__bannerIdx*100}%)`;
+  document.querySelectorAll('#bannerDots button').forEach((b,j)=>b.classList.toggle('on', j===__bannerIdx));
+}
+function bannerNav(d){ bannerGo(__bannerIdx + d); }
+function setupFooter(s){
+  if(s.FOOTER_ABOUT && $('#sfAbout')) $('#sfAbout').textContent = s.FOOTER_ABOUT;
+  if(s.FOOTER_EMAIL && $('#sfEmail')){ $('#sfEmail').textContent = s.FOOTER_EMAIL; $('#sfEmail').href = 'mailto:'+s.FOOTER_EMAIL; }
+  if(s.FOOTER_ADDRESS && $('#sfAddr')) $('#sfAddr').textContent = s.FOOTER_ADDRESS;
+  if($('#sfYear')) $('#sfYear').textContent = new Date().getFullYear();
+  const social = [];
+  const icons = {
+    fb: '<svg viewBox="0 0 24 24"><path d="M14 9h3V6h-3c-1.7 0-3 1.3-3 3v2H9v3h2v7h3v-7h2.5l.5-3H14V9z"/></svg>',
+    tg: '<svg viewBox="0 0 24 24"><path d="M9.7 14.5l-.3 4.1c.5 0 .7-.2 1-.4l2.3-2.2 4.8 3.5c.9.5 1.5.2 1.7-.8L21.8 5c.3-1.2-.4-1.7-1.3-1.4L3.3 10.2C2.1 10.7 2.1 11.4 3 11.7l4.4 1.4 10.2-6.4c.5-.3.9-.1.5.2"/></svg>',
+    tt: '<svg viewBox="0 0 24 24"><path d="M16 3c.4 2.3 1.8 3.8 4 4v3c-1.5 0-2.8-.4-4-1.2V15a6 6 0 11-6-6c.3 0 .7 0 1 .1v3.1c-.3-.1-.6-.2-1-.2a3 3 0 100 6 3 3 0 003-3V3h3z"/></svg>',
+    yt: '<svg viewBox="0 0 24 24"><path d="M23 12.2s0-3.2-.4-4.7c-.2-.9-.9-1.6-1.8-1.8C19.4 5.2 12 5.2 12 5.2s-7.4 0-8.8.5c-.9.2-1.6.9-1.8 1.8C1 9 1 12.2 1 12.2s0 3.2.4 4.7c.2.9.9 1.6 1.8 1.8 1.4.5 8.8.5 8.8.5s7.4 0 8.8-.5c.9-.2 1.6-.9 1.8-1.8.4-1.5.4-4.7.4-4.7zM9.8 15.5v-6.6l6.3 3.3-6.3 3.3z"/></svg>',
+  };
+  if(s.SOCIAL_FACEBOOK) social.push(`<a href="${esc(s.SOCIAL_FACEBOOK)}" target="_blank" rel="noopener" aria-label="Facebook">${icons.fb}</a>`);
+  const tg = s.SOCIAL_TELEGRAM || s.TELEGRAM;
+  if(tg) social.push(`<a href="${esc(tg)}" target="_blank" rel="noopener" aria-label="Telegram">${icons.tg}</a>`);
+  if(s.SOCIAL_TIKTOK) social.push(`<a href="${esc(s.SOCIAL_TIKTOK)}" target="_blank" rel="noopener" aria-label="TikTok">${icons.tt}</a>`);
+  if(s.SOCIAL_YOUTUBE) social.push(`<a href="${esc(s.SOCIAL_YOUTUBE)}" target="_blank" rel="noopener" aria-label="YouTube">${icons.yt}</a>`);
+  if($('#sfSocial')) $('#sfSocial').innerHTML = social.join('');
+}
+
+
 let SORT = 'default';
 const GCID = {{ site.google_client_id|tojson }};
 
@@ -1112,6 +1307,8 @@ async function load(){
     const m = $('#marqueeText');
     if(m) m.textContent = mq.replace(/[🔥✨⭐️⭐🌟]/g,'').trim()+'  ·  '+mq.replace(/[🔥✨⭐️⭐🌟]/g,'').trim()+'  ·  ';
   }
+  setupBanners(s);
+  setupFooter(s);
   if(s.BANNER_TITLE) { const el=$('#promoTitle'); if(el) el.textContent = s.BANNER_TITLE; }
   if(s.BANNER_SUBTITLE) { const el=$('#promoSub'); if(el) el.textContent = s.BANNER_SUBTITLE; }
   if(s.BANNER_OFF) {

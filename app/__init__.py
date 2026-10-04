@@ -9,6 +9,7 @@ from flask import Flask
 
 from app.config import Config
 from app.security import apply_security_headers
+from app.tenant import bind_tenant
 
 
 def create_app(config_class=Config) -> Flask:
@@ -54,6 +55,7 @@ def create_app(config_class=Config) -> Flask:
 
     @app.before_request
     def _security_gate():
+        bind_tenant()
         from flask import request, abort, jsonify, session
         from app import security as sec
         path = request.path or ""

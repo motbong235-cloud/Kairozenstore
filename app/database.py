@@ -78,8 +78,31 @@ def resolve_data_dir() -> Path:
     return d
 
 
+
+def tenant_slug_safe() -> str | None:
+    try:
+        from flask import g, has_request_context
+        if has_request_context():
+            return getattr(g, "tenant_slug", None)
+    except Exception:
+        pass
+    return None
+
+
+def tenant_data_dir(slug: str | None = None) -> Path:
+    """Data directory for a tenant (isolated JSON + media)."""
+    base = resolve_data_dir()
+    s = slug if slug is not None else tenant_slug_safe()
+    if not s:
+        return base
+    d = base / "tenants" / s
+    d.mkdir(parents=True, exist_ok=True)
+    return d
+
+
+
 def db_path() -> Path:
-    return resolve_data_dir() / "db.json"
+    return tenant_data_dir() / "db.json"
 
 
 def upload_dir() -> Path:

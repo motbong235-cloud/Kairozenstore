@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="km">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Privacy Policy · {{ site.name }}</title>
+<meta name="theme-color" content="#1d4ed8">
+<link rel="icon" href="{{ site.logo }}">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&family=Kantumruy+Pro:wght@400;600;700&display=swap" rel="stylesheet">
+<style>
+:root{--blue:#1d4ed8;--blue2:#2563eb;--bg:#f1f5f9;--text:#0f172a;--muted:#64748b;--line:#e2e8f0;--card:#fff;--font:'Inter','Kantumruy Pro',system-ui,sans-serif}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:var(--font);background:var(--bg);color:var(--text);line-height:1.55;font-size:14px;min-height:100vh}
+.top{position:sticky;top:0;z-index:20;background:rgba(255,255,255,.94);backdrop-filter:blur(12px);border-bottom:1px solid var(--line);
+  padding:12px 16px;display:flex;align-items:center;gap:12px;justify-content:space-between}
+.top .brand{display:flex;align-items:center;gap:8px;font-weight:800;color:var(--blue);text-decoration:none}
+.top .brand img{width:32px;height:32px;border-radius:9px}
+.top nav{display:flex;gap:8px;flex-wrap:wrap}
+.top nav a{font-size:12px;font-weight:700;color:var(--muted);text-decoration:none;padding:6px 10px;border-radius:999px}
+.top nav a:hover,.top nav a.on{background:#eff6ff;color:var(--blue)}
+.wrap{max-width:720px;margin:0 auto;padding:20px 16px 80px}
+h1{font-size:22px;font-weight:800;margin-bottom:8px;color:var(--blue);letter-spacing:-.02em}
+.lead{color:var(--muted);margin-bottom:18px;font-size:13px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:16px;margin-bottom:12px;box-shadow:0 2px 10px rgba(15,23,42,.04)}
+.card h2{font-size:15px;font-weight:800;margin-bottom:8px}
+.card h3{font-size:14px;font-weight:800;margin:12px 0 6px}
+.card p,.card li{font-size:13px;color:var(--muted);margin-bottom:8px}
+.card ul{padding-left:18px}
+.step{display:flex;gap:12px;margin-bottom:14px}
+.step .n{flex-shrink:0;width:28px;height:28px;border-radius:50%;background:var(--blue);color:#fff;font-weight:800;font-size:13px;display:grid;place-items:center}
+.step .t b{display:block;font-size:14px;color:var(--text);margin-bottom:2px}
+.btn{display:inline-flex;align-items:center;gap:6px;padding:11px 16px;border-radius:12px;background:var(--blue);color:#fff;font-weight:700;text-decoration:none;font-size:13px;border:none;cursor:pointer}
+.btn.g{background:#fff;color:var(--blue);border:1px solid var(--line)}
+.row{display:flex;gap:10px;flex-wrap:wrap;margin-top:16px}
+.contact-grid{display:grid;gap:10px}
+@media(min-width:560px){.contact-grid{grid-template-columns:1fr 1fr}}
+.foot{text-align:center;padding:20px 16px;font-size:11px;color:#94a3b8}
+.foot a{color:var(--blue2);font-weight:600;text-decoration:none;margin:0 4px}
+</style>
+</head>
+<body>
+<header class="top">
+  <a class="brand" href="/"><img src="{{ site.logo }}" alt="">{{ site.name }}</a>
+  <nav>
+    <a href="/">ហាង</a>
+    <a href="/how-to-buy">របៀបទិញ</a>
+    <a href="/contact">ទំនាក់ទំនង</a>
+    <a href="/faq">FAQ</a>
+  </nav>
+</header>
+<div class="wrap">
+
+  <h1>Privacy Policy</h1>
+  <p class="lead">របៀបដែល {{ site.name }} ប្រមូល និងប្រើទិន្នន័យ</p>
+  <div class="card">
+    <h2>1. ទិន្នន័យដែលប្រមូល</h2>
+    <ul>
+      <li>Google account (ឈ្មោះ · email · រូប) ពេល login</li>
+      <li>Order · wallet · IP (សុវត្ថិភាព / anti-fraud)</li>
+      <li>Payment reference តាម KHPAY (មិនរក្សា card bank ពេញ)</li>
+    </ul>
+    <h2>2. ការប្រើ</h2>
+    <p>ដើម្បីផ្តល់សេវា · delivery account · support · ការពារ fraud។ មិនលក់ទិន្នន័យអ្នកទៅភាគីទីបីសម្រាប់ផ្សាយពាណិជ្ជកម្ម។</p>
+    <h2>3. Cookie / Session</h2>
+    <p>ប្រើ session login។ អាចចេញគណនីបានគ្រប់ពេលក្នុង Profile។</p>
+    <h2>4. សិទ្ធិអ្នកប្រើ</h2>
+    <p>ស្នើលុបគណនី / ទិន្នន័យ តាម Telegram support។</p>
+    <h2>5. ទំនាក់ទំនង</h2>
+    <p>សំណួរពី privacy → <a href="/contact" style="color:var(--blue);font-weight:700">Contact</a></p>
+  </div>
+
+</div>
+<footer class="foot">
+  <a href="/">ហាង</a>·<a href="/about">អំពីយើង</a>·<a href="/how-to-buy">របៀបទិញ</a>·<a href="/contact">Contact</a>·<a href="/faq">FAQ</a>·<a href="/terms">Terms</a>·<a href="/privacy">Privacy</a>
+</footer>
+</body>
+</html>

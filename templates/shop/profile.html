@@ -269,6 +269,11 @@ body{background:radial-gradient(900px 450px at 50% -15%,#ffedd5 0%,transparent 5
 .stat:hover,.quick a:hover,.quick button:hover{transform:translateY(-3px)}
 .vault-item:hover{transform:translateY(-2px);box-shadow:0 8px 20px rgba(15,23,42,.08)}
 
+
+/* Clean profile */
+.hero-card:hover{transform:translateY(-2px)!important}
+.stat:hover{transform:translateY(-2px)!important}
+
 </style>
 {% include '_fonts.html' %}
 </head>
@@ -829,6 +834,11 @@ function startHeartbeat(){
 }
 startHeartbeat();
 
+
+async function loadCaptcha(){
+  try{ const r=await fetch('/api/captcha',{credentials:'same-origin'}).then(x=>x.json()); if(r.ok){window.__cap=r; return r;} }catch(e){}
+  return null;
+}
 </script>
 </body>
 </html>

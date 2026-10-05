@@ -172,6 +172,23 @@ def site_logo():
     return _logo_response()
 
 
+@bp.get("/manifest.webmanifest")
+def web_manifest():
+    from flask import current_app, send_from_directory
+    resp = send_from_directory(current_app.static_folder, "manifest.webmanifest", mimetype="application/manifest+json")
+    resp.headers["Cache-Control"] = "public, max-age=3600"
+    return resp
+
+
+@bp.get("/sw.js")
+def service_worker():
+    from flask import current_app, send_from_directory
+    resp = send_from_directory(current_app.static_folder, "sw.js", mimetype="application/javascript")
+    resp.headers["Service-Worker-Allowed"] = "/"
+    resp.headers["Cache-Control"] = "no-cache"
+    return resp
+
+
 @bp.get("/favicon.ico")
 def favicon():
     # Google & browsers request /favicon.ico by default → serve the admin-uploaded logo

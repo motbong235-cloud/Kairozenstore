@@ -154,3 +154,13 @@ If unset, falls back to in-memory (single process).
 3. Render: add `*.yourdomain.com` if supported, or add each subdomain
 4. Signup: `https://yourdomain.com/partner`
 5. Admin → **Stores $25** → Activate if needed
+
+
+## PWA (Install as App)
+
+- Manifest: `/manifest.webmanifest`
+- Service worker: `/sw.js`
+- Icons: `/static/icons/`
+
+Users can **Install** from browser (Android Chrome) or **Add to Home Screen** (iOS Safari).
+Requires HTTPS (Render provides this).

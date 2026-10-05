@@ -5,7 +5,13 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>{{ site.name }} — {{ site.tagline or 'Premium Accounts' }}</title>
 <meta name="description" content="{{ site.description }}">
-<meta name="theme-color" content="#1d4ed8">
+<meta name="theme-color" content="#4f46e5">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="{{ site.name }}">
+<link rel="manifest" href="/manifest.webmanifest">
+<link rel="apple-touch-icon" href="/static/icons/icon-192.png">
 <link rel="canonical" href="{{ site.url }}/">
 <link rel="icon" href="{{ site.logo }}">
 <link rel="shortcut icon" href="/favicon.ico">
@@ -25,6 +31,42 @@ function startHeartbeat(){
   window.__hb=setInterval(ping, 60000);
 }
 startHeartbeat();
+
+/* ── PWA install ── */
+let __deferredPrompt = null;
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('/sw.js', { scope: '/' }).catch(() => {});
+  });
+}
+window.addEventListener('beforeinstallprompt', (e) => {
+  e.preventDefault();
+  __deferredPrompt = e;
+  if (localStorage.getItem('pwa_dismiss') === '1') return;
+  const el = document.getElementById('pwaInstall');
+  if (el) el.classList.remove('hidden');
+});
+window.addEventListener('appinstalled', () => {
+  __deferredPrompt = null;
+  const el = document.getElementById('pwaInstall');
+  if (el) el.classList.add('hidden');
+});
+document.getElementById('pwaInstallBtn')?.addEventListener('click', async () => {
+  if (!__deferredPrompt) {
+    // iOS / fallback tip
+    alert('iPhone: Share → Add to Home Screen\nAndroid: Menu → Install app');
+    return;
+  }
+  __deferredPrompt.prompt();
+  try { await __deferredPrompt.userChoice; } catch (e) {}
+  __deferredPrompt = null;
+  document.getElementById('pwaInstall')?.classList.add('hidden');
+});
+document.getElementById('pwaDismiss')?.addEventListener('click', () => {
+  localStorage.setItem('pwa_dismiss', '1');
+  document.getElementById('pwaInstall')?.classList.add('hidden');
+});
+
 
 </script>
 <style>
@@ -1044,6 +1086,372 @@ footer.foot a{color:var(--blue2);font-weight:600}
   .sf-wrap{max-width:960px;display:grid;grid-template-columns:1.3fr 1fr 1fr;gap:32px}
   .site-footer{padding:36px 24px 48px}
 }
+
+
+/* ═══════════════════════════════════════════
+   KAIROZEN STORE — NEW UI SURFACE v2
+   Dark-accent commerce · clean mobile-first
+   ═══════════════════════════════════════════ */
+:root{
+  --ink:#0b1220;
+  --ink2:#1e293b;
+  --paper:#f7f8fc;
+  --surface:#ffffff;
+  --line:#e8ecf4;
+  --muted:#6b7a90;
+  --faint:#9aa8bc;
+  --brand:#4f46e5;
+  --brand2:#6366f1;
+  --brand-soft:#eef2ff;
+  --brand-glow:rgba(79,70,229,.28);
+  --sale:#f43f5e;
+  --ok:#10b981;
+  --ok-bg:#d1fae5;
+  --radius:20px;
+  --radius-sm:14px;
+  --shadow:0 4px 24px rgba(15,23,42,.06);
+  --shadow-lg:0 20px 50px rgba(15,23,42,.12);
+  --font:'Inter','Kantumruy Pro',system-ui,-apple-system,sans-serif;
+  --blue:var(--brand);
+  --blue2:var(--brand2);
+  --blue-soft:var(--brand-soft);
+  --blue-line:#c7d2fe;
+  --bg:var(--paper);
+  --card:var(--surface);
+  --text:var(--ink);
+  --red:var(--sale);
+  --green:var(--ok);
+  --green-bg:var(--ok-bg);
+  --r:var(--radius-sm);
+}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{
+  font-family:var(--font);
+  background:var(--paper);
+  color:var(--ink);
+  font-size:14px;
+  line-height:1.55;
+  -webkit-font-smoothing:antialiased;
+  min-height:100vh;
+  background-image:
+    radial-gradient(ellipse 80% 50% at 50% -20%, rgba(99,102,241,.14), transparent),
+    radial-gradient(ellipse 60% 40% at 100% 50%, rgba(14,165,233,.06), transparent);
+}
+::selection{background:#c7d2fe;color:#312e81}
+
+/* Loader */
+#pageLoader{
+  background:linear-gradient(165deg,#0f172a 0%,#1e1b4b 100%)!important;
+}
+#pageLoader .nm{color:#e0e7ff!important;font-weight:800;letter-spacing:-.02em}
+#pageLoader .bar{background:rgba(255,255,255,.12)!important}
+#pageLoader .bar i{background:linear-gradient(90deg,#818cf8,#22d3ee)!important}
+
+/* Marquee */
+.marquee{
+  background:linear-gradient(90deg,#312e81,#4f46e5,#6366f1)!important;
+  color:#fff!important;
+  font-size:12px!important;
+  font-weight:700!important;
+  padding:9px 0!important;
+  letter-spacing:.03em;
+}
+.pchum-bar{display:none!important}
+
+/* Header */
+.top{
+  background:rgba(255,255,255,.78)!important;
+  backdrop-filter:blur(20px) saturate(1.4)!important;
+  -webkit-backdrop-filter:blur(20px) saturate(1.4)!important;
+  border-bottom:1px solid rgba(232,236,244,.9)!important;
+  padding:12px 16px!important;
+  box-shadow:none!important;
+}
+.brand{gap:10px!important}
+.brand img{
+  width:40px!important;height:40px!important;
+  border-radius:12px!important;
+  box-shadow:0 4px 14px var(--brand-glow)!important;
+}
+.brand span{
+  font-size:16px!important;font-weight:800!important;
+  letter-spacing:-.03em;color:var(--ink)!important;
+  -webkit-text-fill-color:unset!important;background:none!important;
+}
+.icon-btn{
+  width:40px;height:40px;border-radius:12px!important;
+  background:var(--brand-soft)!important;color:var(--brand)!important;
+  display:grid;place-items:center;
+}
+.btn-login,.top .btn-login{
+  background:var(--ink)!important;color:#fff!important;
+  border-radius:12px!important;padding:10px 16px!important;
+  font-weight:700!important;font-size:13px!important;
+  box-shadow:0 4px 14px rgba(15,23,42,.2)!important;
+  border:0!important;
+}
+
+/* Banner carousel */
+.banner-carousel{
+  margin:12px 14px 8px!important;
+  border-radius:22px!important;
+  overflow:hidden!important;
+  box-shadow:var(--shadow-lg)!important;
+  border:1px solid rgba(255,255,255,.5)!important;
+}
+.banner-carousel .navb{
+  background:rgba(15,23,42,.35)!important;
+  backdrop-filter:blur(8px);
+  width:36px!important;height:36px!important;
+}
+.banner-carousel .dots button.on{background:#fff!important;width:20px!important}
+
+/* Promo text card */
+.promo{
+  margin:12px 14px!important;
+  border-radius:22px!important;
+  background:linear-gradient(135deg,#0f172a 0%,#1e1b4b 45%,#4f46e5 100%)!important;
+  color:#fff!important;
+  padding:22px 20px!important;
+  box-shadow:0 16px 40px rgba(79,70,229,.25)!important;
+  border:0!important;
+}
+.promo h2{font-size:24px!important;letter-spacing:-.03em!important}
+.promo .chip{
+  background:rgba(255,255,255,.15)!important;
+  backdrop-filter:blur(6px);
+  border:1px solid rgba(255,255,255,.2);
+}
+
+/* Search */
+.searchbar{
+  margin:10px 14px!important;
+  background:#fff!important;
+  border:1.5px solid var(--line)!important;
+  border-radius:16px!important;
+  padding:12px 14px!important;
+  box-shadow:var(--shadow)!important;
+}
+.searchbar:focus-within{
+  border-color:var(--brand)!important;
+  box-shadow:0 0 0 4px rgba(79,70,229,.12), var(--shadow)!important;
+}
+.searchbar input{font-size:14px!important}
+
+/* Categories */
+.cats{
+  padding:6px 14px 12px!important;
+  gap:8px!important;
+}
+.cats button{
+  background:#fff!important;
+  border:1.5px solid var(--line)!important;
+  color:var(--muted)!important;
+  border-radius:999px!important;
+  padding:8px 16px!important;
+  font-weight:700!important;
+  font-size:12px!important;
+  box-shadow:none!important;
+}
+.cats button.on{
+  background:var(--ink)!important;
+  color:#fff!important;
+  border-color:var(--ink)!important;
+  box-shadow:0 6px 16px rgba(15,23,42,.2)!important;
+}
+
+/* Sections */
+.section{padding:4px 14px 12px!important}
+.section-head{margin:18px 0 12px!important}
+.section-head h3{
+  font-size:18px!important;font-weight:800!important;
+  color:var(--ink)!important;letter-spacing:-.02em;
+}
+.section-head h3::before{
+  width:4px!important;height:18px!important;
+  background:var(--brand)!important;
+  border-radius:4px!important;
+  box-shadow:0 0 12px var(--brand-glow);
+}
+.section-head .count,.sort-sel{
+  background:#fff!important;border:1px solid var(--line)!important;
+  border-radius:10px!important;font-size:12px!important;color:var(--muted)!important;
+}
+
+/* Flash cards */
+.flash-card{
+  background:#fff!important;
+  border:1px solid var(--line)!important;
+  border-radius:18px!important;
+  box-shadow:var(--shadow)!important;
+  min-width:148px!important;
+}
+.flash-card .f-img{
+  background:linear-gradient(160deg,#f8fafc,#eef2ff)!important;
+  border-radius:18px 18px 0 0!important;
+}
+.flash-card .name{color:var(--ink)!important;font-weight:700!important}
+.flash-card .price{color:var(--sale)!important;font-weight:800!important}
+
+/* Product grid cards */
+.grid{gap:12px!important;padding:0 14px 8px!important}
+.pcard{
+  background:#fff!important;
+  border:1px solid var(--line)!important;
+  border-radius:var(--radius)!important;
+  box-shadow:var(--shadow)!important;
+  overflow:hidden!important;
+  transition:transform .28s cubic-bezier(.22,1,.36,1), box-shadow .28s!important;
+}
+.pcard:hover{
+  transform:translateY(-6px)!important;
+  box-shadow:var(--shadow-lg)!important;
+  border-color:#c7d2fe!important;
+}
+.pcard .thumb{
+  background:linear-gradient(165deg,#fafbff 0%,#eef2ff 100%)!important;
+  aspect-ratio:1!important;
+}
+.pcard .thumb img{object-fit:contain!important;padding:14px!important}
+.pcard .body{padding:14px!important}
+.pcard h4{
+  font-size:14px!important;font-weight:800!important;
+  color:var(--ink)!important;letter-spacing:-.01em;
+  line-height:1.35!important;
+}
+.pcard .cat{color:var(--faint)!important;font-size:10px!important;font-weight:700!important}
+.pcard .now{
+  font-size:18px!important;font-weight:800!important;
+  color:var(--sale)!important;letter-spacing:-.02em;
+}
+.pcard .was{color:var(--faint)!important}
+.pcard .tag{border-radius:8px!important;font-weight:700!important}
+.pcard .b-hot,.pcard .b-off{
+  border-radius:8px!important;font-weight:800!important;
+  backdrop-filter:blur(6px);
+}
+.btn-buy{
+  width:100%;
+  margin-top:auto;
+  padding:11px 14px!important;
+  border-radius:12px!important;
+  background:var(--ink)!important;
+  color:#fff!important;
+  font-weight:800!important;
+  font-size:13px!important;
+  letter-spacing:.01em;
+  box-shadow:0 4px 14px rgba(15,23,42,.18)!important;
+  transition:transform .15s, background .15s, box-shadow .15s!important;
+}
+.btn-buy:hover{
+  background:var(--brand)!important;
+  box-shadow:0 8px 22px var(--brand-glow)!important;
+  transform:translateY(-1px);
+}
+.btn-buy:active{transform:scale(.98)}
+
+/* Bottom nav */
+.bottom{
+  background:rgba(255,255,255,.94)!important;
+  backdrop-filter:blur(20px)!important;
+  border-top:1px solid var(--line)!important;
+  box-shadow:0 -10px 40px rgba(15,23,42,.06)!important;
+  padding-bottom:calc(8px + var(--safe))!important;
+}
+.bottom button{
+  color:var(--faint)!important;font-weight:600!important;
+  border-radius:12px;padding:6px 12px!important;
+}
+.bottom button.on{
+  color:var(--brand)!important;
+}
+.bottom button.on svg{stroke:var(--brand)!important}
+
+/* Modal */
+.modal-bg{background:rgba(15,23,42,.45)!important;backdrop-filter:blur(6px)}
+.modal{
+  border-radius:24px!important;
+  border:1px solid rgba(255,255,255,.8)!important;
+  box-shadow:0 32px 80px rgba(15,23,42,.28)!important;
+  padding:22px!important;
+}
+.modal h3{font-size:18px!important;letter-spacing:-.02em;color:var(--ink)!important}
+.pay-box{
+  border-radius:18px!important;
+  background:#f8fafc!important;
+  border:1px solid var(--line)!important;
+  padding:16px!important;
+}
+.pay-box img{border-radius:12px}
+
+/* Footer */
+.site-footer{
+  background:linear-gradient(180deg,#f7f8fc 0%,#eef2ff 100%)!important;
+  border-top:1px solid var(--line)!important;
+  margin-top:20px!important;
+}
+.sf-col h4{color:var(--brand)!important}
+.sf-col h4::before{background:var(--brand)!important}
+.sf-social a{
+  background:var(--ink)!important;
+  border-radius:12px!important;
+  box-shadow:0 4px 12px rgba(15,23,42,.2)!important;
+}
+.sf-social a:hover{background:var(--brand)!important;transform:translateY(-2px)}
+.pay-logo{border-radius:10px!important;box-shadow:0 4px 12px rgba(15,23,42,.1)!important}
+
+/* Toast */
+.toast{
+  background:var(--ink)!important;color:#fff!important;
+  border-radius:14px!important;
+  box-shadow:0 12px 40px rgba(15,23,42,.3)!important;
+}
+
+/* Skeleton */
+.skel{
+  background:linear-gradient(90deg,#eef2ff 25%,#f8fafc 50%,#eef2ff 75%)!important;
+  background-size:200% 100%;
+  animation:shimmer 1.2s ease infinite!important;
+  border-radius:16px!important;
+}
+@keyframes shimmer{0%{background-position:200% 0}100%{background-position:-200% 0}}
+
+@media(min-width:720px){
+  .grid{gap:16px!important}
+  .pcard:hover{transform:translateY(-8px)!important}
+}
+@media(prefers-reduced-motion:reduce){
+  .pcard,.btn-buy,.flash-card{transition:none!important}
+  .pcard:hover{transform:none!important}
+}
+
+
+.pwa-banner{
+  position:fixed;left:12px;right:12px;bottom:calc(72px + env(safe-area-inset-bottom,0px));
+  z-index:50;animation:pwaIn .35s ease;
+}
+@keyframes pwaIn{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:none}}
+.pwa-inner{
+  display:flex;align-items:center;gap:12px;
+  background:#0f172a;color:#fff;border-radius:18px;padding:12px 14px;
+  box-shadow:0 16px 48px rgba(15,23,42,.35);
+  border:1px solid rgba(255,255,255,.08);
+}
+.pwa-inner img{border-radius:12px;flex-shrink:0}
+.pwa-txt{flex:1;min-width:0;display:flex;flex-direction:column;gap:2px}
+.pwa-txt b{font-size:13px;font-weight:800}
+.pwa-txt span{font-size:11px;color:#94a3b8}
+.pwa-btn{
+  background:#4f46e5;color:#fff;font-weight:800;font-size:12px;
+  padding:10px 14px;border-radius:12px;border:0;flex-shrink:0;
+  box-shadow:0 4px 14px rgba(79,70,229,.4);
+}
+.pwa-x{background:transparent;color:#94a3b8;font-size:20px;padding:4px 8px;line-height:1}
+@media(min-width:720px){
+  .pwa-banner{left:50%;right:auto;transform:translateX(-50%);width:min(420px,92vw);bottom:24px}
+  .pwa-banner .pwa-inner{/* reset */ }
+}
 </style>
 {% include '_fonts.html' %}
 </head>
@@ -1171,6 +1579,18 @@ footer.foot a{color:var(--blue2);font-weight:600}
   </div>
 </footer>
 
+<!-- PWA install prompt -->
+<div id="pwaInstall" class="pwa-banner hidden" role="dialog" aria-label="Install app">
+  <div class="pwa-inner">
+    <img src="/static/icons/icon-192.png" alt="" width="44" height="44">
+    <div class="pwa-txt">
+      <b>ដំឡើង {{ site.name }}</b>
+      <span>បើកដូច App · លឿន · ពី Home Screen</span>
+    </div>
+    <button type="button" class="pwa-btn" id="pwaInstallBtn">Install</button>
+    <button type="button" class="pwa-x" id="pwaDismiss" aria-label="Close">×</button>
+  </div>
+</div>
 <nav class="bottom">
   <button type="button" class="on" onclick="window.scrollTo({top:0,behavior:'smooth'})">
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 10.5L12 3l9 7.5"/><path d="M5 9.5V20a1 1 0 001 1h4v-6h4v6h4a1 1 0 001-1V9.5"/></svg>
